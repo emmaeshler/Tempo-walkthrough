@@ -26,7 +26,7 @@ const DRAWER_WIDTH = 340;
 
 const NAV_ITEMS = [
   { label: "Price Review", path: "/" },
-  { label: "Pre-Call Plan", path: "/pre-call-plan" },
+  { label: "Pre-Call Dashboard", path: "/pre-call-plan" },
 ];
 
 function Logo({ size = 20 }: { size?: number }) {
@@ -48,7 +48,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isTempoActive = pathname === "/" || pathname.startsWith("/tempo");
+  const isTempoActive = pathname === "/" || pathname.startsWith("/tempo") || pathname.startsWith("/pre-call");
 
   const navigateTo = (path: string) => {
     router.push(path);

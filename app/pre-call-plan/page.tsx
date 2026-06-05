@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -145,20 +145,144 @@ const HEAT_DESCRIPTORS = [
   "Maximize capture",
 ];
 
-const OBJECTIONS = [
-  {
-    objection: "“We’ve already seen several increases this year.”",
-    response: "“Understood — this adjustment consolidates prior ad-hoc changes into one consistent structure and avoids frequent smaller updates.”",
+const RADAR_LABELS = ["Priority", "Tenure", "Last change", "Breadth", "Revenue"];
+
+const CHIP_SUFFIXES: Record<string, string> = {
+  clientPriority: "priority",
+  relationship: "relationship",
+  timeSince: "price change",
+  breadth: "breadth",
+  revenue: "revenue",
+};
+
+interface StrategyContent {
+  pctIncrease: string;
+  effectiveDate: string;
+  summaryBullets: string[];
+  talkingPoint: string;
+  objections: { objection: string; response: string }[];
+  marginBullets: string[];
+  valueProp: string;
+  emailVersion: string;
+}
+
+const STRATEGY_BY_POSTURE: Record<string, StrategyContent> = {
+  "Protect relationship": {
+    pctIncrease: "1.5%",
+    effectiveDate: "September 1, 2026",
+    summaryBullets: [
+      "Affects: Select high-volume lines under AstroBright",
+      "Average price adjustment: +1.5% effective September 1, 2026",
+      "Driver: Targeted cost-of-goods increases on specific raw materials",
+      "Result: Minimal disruption — preserves current rate structure on 85% of SKUs",
+    ],
+    talkingPoint: "We’ve absorbed the majority of recent cost increases. This small adjustment to a handful of lines lets us maintain the service quality and lead times you rely on.",
+    objections: [
+      { objection: "Any increase feels like a lot right now.", response: "We understand — that’s why we kept this to 1.5%, well below the industry average of 4–6%. The vast majority of your pricing stays exactly the same." },
+      { objection: "We’ve been a loyal customer for years.", response: "Absolutely, and that’s precisely why this adjustment is the smallest in your category. Your tenure and partnership are the reason we’ve been able to hold pricing this long." },
+      { objection: "Can we defer the effective date?", response: "We can discuss phasing — given our relationship, we’re open to a 60-day transition window to help your team plan." },
+    ],
+    marginBullets: [
+      "Estimated 2026 impact: +0.6% margin recovery on affected lines",
+      "Key effect: Preserves current service levels and avoids deeper corrections later in the year.",
+      "Overall portfolio pricing remains among the most competitive for accounts of this tenure.",
+    ],
+    valueProp: "This minor adjustment ensures we can continue investing in the reliability and turnaround times your team depends on — without broader pricing disruption down the line.",
+    emailVersion: "We’re making a small pricing update (+1.5%) on a limited set of product lines, effective September 1. This reflects targeted material cost changes and lets us maintain the service levels and pricing stability you count on across the rest of your portfolio.",
   },
-  {
-    objection: "“Competitor X is offering lower rates.”",
-    response: "“We evaluated market comparisons — our pricing now reflects full service, reliability, and lead-time advantages.”",
+  "Lean conservative": {
+    pctIncrease: "2.5%",
+    effectiveDate: "August 15, 2026",
+    summaryBullets: [
+      "Affects: Core product lines under AstroBright",
+      "Average price adjustment: +2.5% effective August 15, 2026",
+      "Driver: Incremental input cost increases and logistics rate adjustments",
+      "Result: Pricing stays competitive while closing the gap on cost creep",
+    ],
+    talkingPoint: "Effective August 15, we’re applying a modest 2.5% adjustment across core lines to reflect accumulated cost changes. This keeps your pricing well below market rate.",
+    objections: [
+      { objection: "We haven’t budgeted for an increase.", response: "We delayed this as long as possible to give planning time. At 2.5%, it’s roughly half the market average, and we’re happy to discuss staggered implementation." },
+      { objection: "Why now?", response: "Input costs have been building for several quarters. Addressing them now with a modest adjustment prevents a larger correction later in the fiscal year." },
+      { objection: "Competitor quoted lower.", response: "Our rate includes priority fulfillment and dedicated support. When factoring total cost of service, we consistently benchmark favorably — and this increase keeps that true." },
+    ],
+    marginBullets: [
+      "Estimated 2026 impact: +1.1% margin improvement across affected SKUs",
+      "Key effect: Closes the cost-price gap that’s been widening since Q3 2025 without disrupting purchasing patterns.",
+      "High-volume items see the smallest adjustment; specialty lines absorb the bulk.",
+    ],
+    valueProp: "This update reflects our commitment to keeping pricing predictable and transparent. We’ve structured it to protect your highest-volume purchases while ensuring we can sustain the quality and responsiveness you expect.",
+    emailVersion: "Starting August 15, select product lines will see a 2.5% pricing adjustment to reflect accumulated input cost changes. Your highest-volume items are minimally affected. This approach keeps your overall portfolio pricing well below market average while maintaining the service quality you rely on.",
   },
-  {
-    objection: "“We buy in multiple categories, shouldn’t we get a better rate?”",
-    response: "“Your cross-category volume is why your overall increase is below the market average at just 3.5%. It recognizes your partnership breadth.”",
+  "Balanced approach": {
+    pctIncrease: "3.5%",
+    effectiveDate: "July 15, 2026",
+    summaryBullets: [
+      "Affects: Copy & Forms lines under AstroBright",
+      "Average price adjustment: +3.5% effective July 15, 2026",
+      "Driver: Rising input costs in paper and distribution, offset by efficiency gains",
+      "Result: Simplified, more consistent pricing across product families",
+    ],
+    talkingPoint: "Starting July 15, our updated pricing reflects moderate adjustments across select product lines to align with material costs and maintain consistency.",
+    objections: [
+      { objection: "We’ve already seen several increases this year.", response: "Understood — this adjustment consolidates prior ad-hoc changes into one consistent structure and avoids frequent smaller updates." },
+      { objection: "Competitor X is offering lower rates.", response: "We evaluated market comparisons — our pricing now reflects full service, reliability, and lead-time advantages." },
+      { objection: "We buy in multiple categories, shouldn’t we get a better rate?", response: "Your cross-category volume is why your overall increase is below the market average at just 3.5%. It recognizes your partnership breadth." },
+    ],
+    marginBullets: [
+      "Estimated 2026 impact: +1.8% overall margin improvement",
+      "Key effect: More sustainable pricing on low-margin SKUs; enables continued service levels and innovation investment.",
+      "Broader portfolio mix remains competitive — small increases on high-volume items balanced by stable pricing on specialty forms.",
+    ],
+    valueProp: "These updates position you for stable supply, predictable pricing, and better alignment with our enhanced product mix for 2026. They reflect our continued investment in product quality, reliability, and service turnaround times — giving your teams fewer disruptions and more long-term cost control.",
+    emailVersion: "We’re updating select product prices by an average of 3.5% effective July 15. This aligns with paper and distribution cost trends and helps sustain consistent supply without future volatility. The shift improves overall margin stability while keeping your multi-category pricing well below market averages.",
   },
-];
+  "Moderately aggressive": {
+    pctIncrease: "5.5%",
+    effectiveDate: "July 1, 2026",
+    summaryBullets: [
+      "Affects: All active product lines under AstroBright",
+      "Average price adjustment: +5.5% effective July 1, 2026",
+      "Driver: Significant raw material inflation, freight surcharges, and market realignment",
+      "Result: Pricing corrected to sustainable levels with improved margin across the portfolio",
+    ],
+    talkingPoint: "Effective July 1, we’re implementing a 5.5% pricing correction across your portfolio. This reflects overdue realignment with market conditions and ensures long-term supply continuity.",
+    objections: [
+      { objection: "That’s a significant jump.", response: "It is meaningful — and intentionally so. We held pricing flat for over 18 months while costs rose 12%. This correction brings us to a sustainable baseline without future catch-up increases." },
+      { objection: "We’ll need to evaluate alternatives.", response: "We encourage comparison. Our total cost of ownership — factoring reliability, lead times, and dedicated support — positions this increase as a value investment, not just a price change." },
+      { objection: "Can we negotiate specific lines?", response: "We’ve structured tiered adjustments — your highest-volume items carry a lower rate. We can review the breakdown together to find the right balance." },
+    ],
+    marginBullets: [
+      "Estimated 2026 impact: +3.2% margin recovery, bringing portfolio back to target",
+      "Key effect: Eliminates unsustainable below-market pricing on 40% of active SKUs.",
+      "Positions future adjustments as incremental rather than corrective — more predictable for both sides.",
+    ],
+    valueProp: "This reset ensures we can continue prioritizing your account with dedicated resources, priority fulfillment, and product innovation. It’s a one-time correction designed to prevent repeated smaller increases going forward.",
+    emailVersion: "Effective July 1, we’re adjusting pricing by an average of 5.5% across your product lines. This reflects 18+ months of absorbed cost increases and realigns our partnership for sustainable, predictable pricing going forward. We’ve structured the changes to protect your highest-volume items.",
+  },
+  "Maximize capture": {
+    pctIncrease: "8.0%",
+    effectiveDate: "June 15, 2026",
+    summaryBullets: [
+      "Affects: Full product catalog under AstroBright",
+      "Average price adjustment: +8.0% effective June 15, 2026",
+      "Driver: Market repricing, input cost correction, and strategic portfolio realignment",
+      "Result: Full market-rate pricing achieved; margin targets restored to benchmark levels",
+    ],
+    talkingPoint: "Effective June 15, we’re moving to market-rate pricing across your account. This 8% adjustment reflects the true cost of service and positions both sides for a more transparent pricing relationship.",
+    objections: [
+      { objection: "This is far above what we’ve paid historically.", response: "Historical pricing reflected introductory and retention discounts that are no longer sustainable. The new rate is competitive with what comparable accounts pay and reflects our full-service value." },
+      { objection: "We’ll need to go to bid.", response: "We support transparent evaluation. Our RFP data shows this rate is in line with or below market for the service tier and SLAs included. We’re confident in the value comparison." },
+      { objection: "Why such a large single increase?", response: "We chose a single correction over multiple smaller increases to give your team pricing certainty for the next 12+ months. No further adjustments are planned through 2027." },
+    ],
+    marginBullets: [
+      "Estimated 2026 impact: +5.1% margin improvement — restores portfolio to full benchmark",
+      "Key effect: Eliminates all legacy below-market pricing; every SKU now at or above floor margin.",
+      "Enables reinvestment in account-specific innovation, dedicated support resources, and supply guarantees.",
+    ],
+    valueProp: "This pricing reflects the full value of our partnership — dedicated capacity, priority service, and product innovation tailored to your needs. It’s a reset that eliminates pricing uncertainty for both sides and locks in stability through 2027.",
+    emailVersion: "Effective June 15, we’re updating pricing across your account to reflect current market rates — an average adjustment of 8%. This one-time correction replaces legacy pricing, aligns with industry benchmarks, and guarantees rate stability through 2027. We’re committed to ensuring the value behind every dollar is clear.",
+  },
+};
 
 const QUICK_ACTIONS = [
   "Generate Email For Customers",
@@ -195,7 +319,93 @@ const sliderSx = {
   "& .MuiSlider-rail": { bgcolor: "rgba(0,0,0,0.12)" },
 };
 
-function GeneratedContent() {
+function RadarChart({
+  driverValues,
+  drivers,
+}: {
+  driverValues: Record<string, number>;
+  drivers: DriverConfig[];
+}) {
+  const cx = 100, cy = 100, radius = 60;
+  const n = drivers.length;
+
+  const getPoint = (index: number, value: number, maxVal = 2) => {
+    const angle = (Math.PI * 2 * index) / n - Math.PI / 2;
+    const dist = (value / maxVal) * radius;
+    return { x: cx + dist * Math.cos(angle), y: cy + dist * Math.sin(angle) };
+  };
+
+  const toPolygon = (values: number[]) =>
+    values.map((v, i) => {
+      const p = getPoint(i, v);
+      return `${p.x},${p.y}`;
+    }).join(" ");
+
+  const currentValues = drivers.map((d) => driverValues[d.key]);
+  const aiValues = drivers.map((d) => d.aiValue);
+  const gridLevels = [0.67, 1.33, 2];
+
+  return (
+    <svg viewBox="0 0 200 200" width={140} height={140} style={{ display: "block" }}>
+      {gridLevels.map((level, i) => (
+        <polygon
+          key={i}
+          points={Array.from({ length: n }, (_, j) => {
+            const p = getPoint(j, level);
+            return `${p.x},${p.y}`;
+          }).join(" ")}
+          fill="none"
+          stroke="rgba(0,0,0,0.08)"
+          strokeWidth="0.75"
+        />
+      ))}
+      {Array.from({ length: n }, (_, i) => {
+        const p = getPoint(i, 2);
+        return (
+          <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(0,0,0,0.08)" strokeWidth="0.75" />
+        );
+      })}
+      <polygon
+        points={toPolygon(aiValues)}
+        fill="rgba(240,139,29,0.10)"
+        stroke="#f08b1d"
+        strokeWidth="1.5"
+        strokeDasharray="4 2"
+      />
+      <polygon
+        points={toPolygon(currentValues)}
+        fill="rgba(24,95,165,0.15)"
+        stroke="#185FA5"
+        strokeWidth="1.5"
+      />
+      {currentValues.map((v, i) => {
+        const p = getPoint(i, v);
+        return <circle key={i} cx={p.x} cy={p.y} r="3" fill="#185FA5" />;
+      })}
+      {RADAR_LABELS.map((label, i) => {
+        const p = getPoint(i, 2.8);
+        return (
+          <text
+            key={i}
+            x={p.x}
+            y={p.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="9"
+            fill="rgba(0,0,0,0.45)"
+            fontFamily="Inter, sans-serif"
+          >
+            {label}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
+function GeneratedContent({ posture }: { posture: string }) {
+  const content = STRATEGY_BY_POSTURE[posture] || STRATEGY_BY_POSTURE["Balanced approach"];
+
   return (
     <Paper elevation={0} sx={{ bgcolor: "white", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.08)", p: 4 }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
@@ -214,10 +424,7 @@ function GeneratedContent() {
       </Typography>
 
       <Box component="ul" sx={{ pl: 2.5, mb: 3.5, "& li": { fontSize: 13, color: "#000", mb: 0.75, lineHeight: 1.7 } }}>
-        <li>Affects: Copy &amp; Forms lines under AstroBright</li>
-        <li>Average price adjustment: +3.5% effective July 15, 2026</li>
-        <li>Driver: Rising input costs in paper and distribution, offset by efficiency gains</li>
-        <li>Result: Simplified, more consistent pricing across product families</li>
+        {content.summaryBullets.map((b, i) => <li key={i}>{b}</li>)}
       </Box>
 
       <Box sx={{ mb: 3.5 }}>
@@ -225,7 +432,7 @@ function GeneratedContent() {
           Concise customer talking point:
         </Typography>
         <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.7)", fontStyle: "italic", lineHeight: 1.7 }}>
-          {"“Starting July 15, our updated pricing reflects moderate adjustments across select product lines to align with material costs and maintain consistency.”"}
+          {content.talkingPoint}
         </Typography>
       </Box>
 
@@ -247,7 +454,7 @@ function GeneratedContent() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {OBJECTIONS.map((row, idx) => (
+              {content.objections.map((row, idx) => (
                 <TableRow key={idx} sx={{ bgcolor: idx % 2 === 0 ? "#fff" : "#fafafa", "&:last-child td": { borderBottom: 0 } }}>
                   <TableCell sx={tableCellSx}>{row.objection}</TableCell>
                   <TableCell sx={tableCellSx}>{row.response}</TableCell>
@@ -265,9 +472,7 @@ function GeneratedContent() {
           Margin &amp; Profitability Impact
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, "& li": { fontSize: 13, color: "#000", mb: 0.75, lineHeight: 1.7 } }}>
-          <li>Estimated 2026 impact: +1.8% overall margin improvement</li>
-          <li>Key effect: More sustainable pricing on low-margin SKUs; enables continued service levels and innovation investment.</li>
-          <li>Broader portfolio mix remains competitive &mdash; small increases on high-volume items balanced by stable pricing on specialty forms.</li>
+          {content.marginBullets.map((b, i) => <li key={i}>{b}</li>)}
         </Box>
       </Box>
 
@@ -276,7 +481,7 @@ function GeneratedContent() {
           Value Proposition Reinforcement
         </Typography>
         <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.7)", fontStyle: "italic", lineHeight: 1.7 }}>
-          {"“These updates position you for stable supply, predictable pricing, and better alignment with our enhanced product mix for 2026. They reflect our continued investment in product quality, reliability, and service turnaround times — giving your teams fewer disruptions and more long-term cost control.”"}
+          {content.valueProp}
         </Typography>
       </Box>
 
@@ -285,7 +490,7 @@ function GeneratedContent() {
           Concise Version (for quick use / email):
         </Typography>
         <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.7)", fontStyle: "italic", lineHeight: 1.7 }}>
-          {"“We’re updating select product prices by an average of 3.5% effective July 15. This aligns with paper and distribution cost trends and helps sustain consistent supply without future volatility. The shift improves overall margin stability while keeping your multi-category pricing well below market averages.”"}
+          {content.emailVersion}
         </Typography>
       </Box>
     </Paper>
@@ -316,10 +521,13 @@ export default function PreCallPlanPage() {
     Object.fromEntries(SLIDER_DRIVERS.map((d) => [d.key, d.defaultValue]))
   );
   const [aiApplied, setAiApplied] = useState<Record<string, boolean>>({});
-  const [aiBannerState, setAiBannerState] = useState<"suggest" | "applied">("suggest");
+  const [aiBannerState, setAiBannerState] = useState<"suggest" | "applying" | "applied">("suggest");
   const [buyingPriority, setBuyingPriority] = useState("Speed of service");
   const [message, setMessage] = useState("");
   const [contentState, setContentState] = useState<"empty" | "loading" | "generated">("empty");
+  const [loadingMessage, setLoadingMessage] = useState("");
+  const [generatedPosture, setGeneratedPosture] = useState("");
+  const generateTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const posture = useMemo(() => {
     const total = SLIDER_DRIVERS.reduce((sum, d) => {
@@ -346,15 +554,18 @@ export default function PreCallPlanPage() {
   };
 
   const applyAI = () => {
-    const newValues: Record<string, number> = {};
-    const newAi: Record<string, boolean> = {};
-    SLIDER_DRIVERS.forEach((d) => {
-      newValues[d.key] = d.aiValue;
-      newAi[d.key] = true;
+    setAiBannerState("applying");
+    const applied: Record<string, boolean> = {};
+    SLIDER_DRIVERS.forEach((d, i) => {
+      setTimeout(() => {
+        setDriverValues((prev) => ({ ...prev, [d.key]: d.aiValue }));
+        applied[d.key] = true;
+        setAiApplied({ ...applied });
+        if (i === SLIDER_DRIVERS.length - 1) {
+          setTimeout(() => setAiBannerState("applied"), 400);
+        }
+      }, 300 * (i + 1));
     });
-    setDriverValues((prev) => ({ ...prev, ...newValues }));
-    setAiApplied(newAi);
-    setAiBannerState("applied");
   };
 
   const resetAll = () => {
@@ -364,9 +575,27 @@ export default function PreCallPlanPage() {
   };
 
   const handleGenerate = () => {
+    generateTimers.current.forEach(clearTimeout);
+    generateTimers.current = [];
+    setGeneratedPosture(posture.descriptor);
     setContentState("loading");
-    setTimeout(() => setContentState("generated"), 2000);
+    const stages = [
+      "Analyzing account history and pricing data…",
+      "Evaluating customer sensitivity and risk factors…",
+      "Building objection-response framework…",
+      "Generating communication strategy…",
+    ];
+    setLoadingMessage(stages[0]);
+    stages.forEach((msg, i) => {
+      if (i === 0) return;
+      const t = setTimeout(() => setLoadingMessage(msg), i * 1500);
+      generateTimers.current.push(t);
+    });
+    const done = setTimeout(() => setContentState("generated"), stages.length * 1500);
+    generateTimers.current.push(done);
   };
+
+  useEffect(() => () => generateTimers.current.forEach(clearTimeout), []);
 
   return (
     <AppShell>
@@ -409,43 +638,58 @@ export default function PreCallPlanPage() {
                 </IconButton>
               </Box>
 
-              {/* Pricing Posture Heat Strip */}
+              {/* Radar Chart & Pricing Posture */}
               <Box sx={{ px: 2.5, py: 2, borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                  <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.45)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Pricing posture
-                  </Typography>
-                  <Typography sx={{ fontSize: 12, fontWeight: 500, color: "#000" }}>
-                    {posture.descriptor}
-                  </Typography>
+                <Box sx={{ display: "flex", gap: 0.5, alignItems: "flex-start" }}>
+                  <Box sx={{ flexShrink: 0 }}>
+                    <RadarChart driverValues={driverValues} drivers={SLIDER_DRIVERS} />
+                  </Box>
+                  <Box sx={{ flex: 1, pt: 0.5 }}>
+                    <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.45)", textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.25 }}>
+                      Pricing posture
+                    </Typography>
+                    <Typography sx={{ fontSize: 16, fontWeight: 700, color: "#000", mb: 1.25 }}>
+                      {posture.descriptor}
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      {SLIDER_DRIVERS.map((d) => {
+                        const val = driverValues[d.key];
+                        const badge = d.badgeStyles[val];
+                        return (
+                          <Box key={d.key} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                            <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.4)", width: 58, flexShrink: 0 }}>
+                              {RADAR_LABELS[SLIDER_DRIVERS.indexOf(d)]}
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontSize: 11,
+                                fontWeight: 500,
+                                px: 1,
+                                py: 0.25,
+                                borderRadius: "20px",
+                                border: `1.5px solid ${badge.color}30`,
+                                color: badge.color,
+                                lineHeight: 1.3,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {d.labels[val]}
+                            </Typography>
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                  </Box>
                 </Box>
-                <Box sx={{ position: "relative", mb: 0.75 }}>
-                  <Box
-                    sx={{
-                      height: 10,
-                      borderRadius: "20px",
-                      background: "linear-gradient(to right, #5DCAA5, #EF9F27, #D85A30)",
-                    }}
-                  />
-                  <Box
-                    sx={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: "50%",
-                      bgcolor: "white",
-                      border: "2px solid #185FA5",
-                      position: "absolute",
-                      top: -2,
-                      left: `${posture.pct}%`,
-                      transform: "translateX(-50%)",
-                      transition: "left 0.3s ease",
-                      pointerEvents: "none",
-                    }}
-                  />
-                </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.4)" }}>Protect relationship</Typography>
-                  <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.4)" }}>Maximize capture</Typography>
+                <Box sx={{ display: "flex", gap: 2.5, mt: 1.25, pl: 0.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#185FA5" }} />
+                    <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.45)" }}>Your settings</Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#f08b1d" }} />
+                    <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.45)" }}>AI suggested</Typography>
+                  </Box>
                 </Box>
               </Box>
 
@@ -487,6 +731,13 @@ export default function PreCallPlanPage() {
                       >
                         Apply
                       </Button>
+                    </>
+                  ) : aiBannerState === "applying" ? (
+                    <>
+                      <CircularProgress size={12} sx={{ color: "#185FA5", flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: 12, color: "#0C447C", flex: 1, lineHeight: 1.4 }}>
+                        Analyzing account data and setting drivers&hellip;
+                      </Typography>
                     </>
                   ) : (
                     <Typography sx={{ fontSize: 12, color: "#0C447C", flex: 1, lineHeight: 1.4 }}>
@@ -625,25 +876,6 @@ export default function PreCallPlanPage() {
                   </FormControl>
                 </Box>
               </Box>
-            </Box>
-
-            {/* Summary Bar */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                px: 2.5,
-                py: 1.25,
-                borderTop: "1px solid rgba(0,0,0,0.06)",
-                bgcolor: "rgba(0,0,0,0.015)",
-              }}
-            >
-              <InfoIcon sx={{ fontSize: 14, color: "rgba(0,0,0,0.35)", flexShrink: 0 }} />
-              <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.5)", lineHeight: 1.4 }}>
-                5 drivers set &middot; posture is <strong>{posture.descriptor.toLowerCase()}</strong>
-                {aiDriverCount > 0 && <> &middot; {aiDriverCount} AI-suggested</>}
-              </Typography>
             </Box>
 
             {/* Collapsible Plan History */}
@@ -859,14 +1091,22 @@ export default function PreCallPlanPage() {
           ) : contentState === "loading" ? (
             <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
               <CircularProgress size={44} sx={{ color: "#f08b1d", mb: 2.5 }} />
-              <Typography sx={{ fontSize: 14, color: "rgba(0,0,0,0.5)" }}>
-                Generating communication strategy&hellip;
+              <Typography
+                key={loadingMessage}
+                sx={{
+                  fontSize: 14,
+                  color: "rgba(0,0,0,0.5)",
+                  animation: "fadeIn 0.4s ease",
+                  "@keyframes fadeIn": { from: { opacity: 0, transform: "translateY(4px)" }, to: { opacity: 1, transform: "translateY(0)" } },
+                }}
+              >
+                {loadingMessage}
               </Typography>
             </Box>
           ) : (
             <>
               <Box sx={{ flex: 1, overflowY: "auto", px: 4, py: 3 }}>
-                <GeneratedContent />
+                <GeneratedContent posture={generatedPosture} />
               </Box>
 
               {/* Chat input */}
