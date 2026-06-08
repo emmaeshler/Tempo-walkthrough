@@ -42,7 +42,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Insights as InsightsIcon,
   InfoOutlined as InfoOutlinedIcon,
-  Timeline as TimelineIcon,
+  BarChart as BarChartIcon,
 } from "@mui/icons-material";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -965,7 +965,7 @@ export default function PriceReviewPage() {
               {([
                 { key: "explain" as const, icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} />, tooltip: "Explain The Price" },
                 { key: "analytics" as const, icon: <InsightsIcon sx={{ fontSize: 20 }} />, tooltip: "AI Analytics" },
-                { key: "decision-support" as const, icon: <TimelineIcon sx={{ fontSize: 20 }} />, tooltip: "Price History" },
+                { key: "decision-support" as const, icon: <BarChartIcon sx={{ fontSize: 20 }} />, tooltip: "Price History" },
                 { key: "details" as const, icon: <InfoOutlinedIcon sx={{ fontSize: 20 }} />, tooltip: "Engagement Details" },
                 { key: "comments" as const, icon: <ChatBubbleOutlineIcon sx={{ fontSize: 20 }} />, tooltip: "Comments" },
               ]).map((tab) => (
