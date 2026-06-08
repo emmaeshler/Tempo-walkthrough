@@ -29,7 +29,7 @@ export interface RowData {
 }
 
 const partners = ["M. Richardson", "S. Goldstein", "J. Whitfield", "R. Patel", "K. Donovan", "A. Bernstein", "T. Nakamura", "L. Chen"];
-const statuses = ["Needs Review", "In Progress", "Approved", "Submitted"];
+const statuses = ["Needs Review", "Complete", "Revised"];
 const retentionBuckets = ["Platinum", "Gold", "Silver", "Bronze"];
 const renewalStatuses = ["Active", "Up for Renewal", "Renewed", "At Risk"];
 const commStatuses = ["Not Started", "Sent", "Discussed", "Accepted"];
@@ -180,8 +180,8 @@ export function generateTableData(): RowData[] {
     const recTotal = recFixedFee + Math.round(eng.currentAdminFee * (1 + eng.recPriceIncreasePct / 100));
     const impactDelta = revisedTotalFee - recTotal;
 
-    const statusIdx = r2 < 0.45 ? 0 : r2 < 0.7 ? 1 : r2 < 0.9 ? 2 : 3;
-    const isFinalized = statusIdx >= 2;
+    const statusIdx = r2 < 0.45 ? 0 : r2 < 0.8 ? 1 : 2;
+    const isFinalized = statusIdx >= 1;
     const commIdx = isFinalized ? (r6 < 0.4 ? 3 : r6 < 0.7 ? 2 : 1) : (r6 < 0.5 ? 0 : 1);
 
     const custAcceptedFixedFee = isFinalized ? (r7 < 0.7 ? revisedFixedFee : Math.round(revisedFixedFee * 0.98)) : null;

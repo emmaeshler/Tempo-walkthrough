@@ -72,7 +72,7 @@ const SLIDER_DRIVERS: DriverConfig[] = [
   {
     key: "clientPriority",
     label: "Client priority",
-    defaultValue: 1,
+    defaultValue: 0,
     labels: ["Low", "Medium", "High"],
     endLabels: ["Low", "High"],
     badgeStyles: [
@@ -82,12 +82,12 @@ const SLIDER_DRIVERS: DriverConfig[] = [
     ],
     aggressiveness: [0, 1, 2],
     aiValue: 2,
-    aiReason: "Set to High because Meridian Health Systems has an active CFO sponsor and is flagged as a top-10 strategic account in the healthcare vertical this year.",
+    aiReason: "Set to High — Meridian has an active CFO sponsor and is a top-10 strategic account. They've never issued an RFP in 8 years, signaling deep trust and low flight risk.",
   },
   {
     key: "relationship",
     label: "Relationship length",
-    defaultValue: 0,
+    defaultValue: 1,
     labels: ["Low", "Medium", "High"],
     endLabels: ["Low", "High"],
     badgeStyles: [
@@ -97,22 +97,22 @@ const SLIDER_DRIVERS: DriverConfig[] = [
     ],
     aggressiveness: [2, 1, 0],
     aiValue: 2,
-    aiReason: "Set to High because Meridian has been a client for 8 years across Audit, Tax, and Advisory with no churn risk flags in the last 4 quarters.",
+    aiReason: "Set to High — 8 years across Audit, Tax, and Advisory with zero churn flags. Deep institutional knowledge the client can't easily replace. This is leverage for a confident pricing conversation.",
   },
   {
-    key: "timeSince",
-    label: "Last price change",
+    key: "priceSensitivity",
+    label: "Price sensitivity",
     defaultValue: 2,
-    labels: ["Recent", "Some time ago", "Long ago"],
-    endLabels: ["Recent", "Long ago"],
+    labels: ["Low", "Medium", "High"],
+    endLabels: ["Low", "High"],
     badgeStyles: [
       { bg: "#E1F5EE", color: "#0F6E56" },
       { bg: "#FAEEDA", color: "#854F0B" },
       { bg: "#FAECE7", color: "#993C1D" },
     ],
-    aggressiveness: [0, 1, 2],
-    aiValue: 2,
-    aiReason: "Set to Long ago because the last fee adjustment for Meridian was 18 months ago, and engagement scope has expanded since then.",
+    aggressiveness: [2, 1, 0],
+    aiValue: 0,
+    aiReason: "Set to Low — Meridian accepted 6%, 7.8%, and 8.1% increases over 3 consecutive cycles without pushback. Their CFO mentioned fee transparency but never challenged the amounts. The data says they'll absorb more.",
   },
   {
     key: "breadth",
@@ -126,13 +126,13 @@ const SLIDER_DRIVERS: DriverConfig[] = [
       { bg: "#E1F5EE", color: "#0F6E56" },
     ],
     aggressiveness: [0, 1, 2],
-    aiValue: 1,
-    aiReason: "Set to Moderate because Meridian currently engages across 3 service lines (Audit, Tax, Advisory) with whitespace in Accounting and Government services.",
+    aiValue: 2,
+    aiReason: "Set to Broad — Meridian engages across 3 service lines (Audit, Tax, Advisory) with whitespace in SOX and Government. Multi-service switching costs make this a sticky, high-breadth relationship.",
   },
   {
     key: "revenue",
     label: "Revenue potential",
-    defaultValue: 2,
+    defaultValue: 1,
     labels: ["Low", "Medium", "High"],
     endLabels: ["Low", "High"],
     badgeStyles: [
@@ -142,7 +142,7 @@ const SLIDER_DRIVERS: DriverConfig[] = [
     ],
     aggressiveness: [0, 1, 2],
     aiValue: 2,
-    aiReason: "Set to High because Meridian expanded to a second hospital campus this year and has inquired about SOX compliance advisory, signaling growth in engagement scope.",
+    aiReason: "Set to High — Meridian expanded to a second campus and is exploring SOX advisory ($500K+ addressable wallet). The new scope signals strong growth trajectory and willingness to deepen the relationship.",
   },
 ];
 
@@ -154,12 +154,14 @@ const HEAT_DESCRIPTORS = [
   "Maximize capture",
 ];
 
-const RADAR_LABELS = ["Priority", "Tenure", "Last change", "Breadth", "Revenue"];
+const POSTURE_PCT = ["1.5%", "2.5%", "3.5%", "5.5%", "8.0%"];
+
+const RADAR_LABELS = ["Priority", "Tenure", "Sensitivity", "Breadth", "Revenue"];
 
 const CHIP_SUFFIXES: Record<string, string> = {
   clientPriority: "priority",
   relationship: "relationship",
-  timeSince: "price change",
+  priceSensitivity: "sensitivity",
   breadth: "breadth",
   revenue: "revenue",
 };
@@ -168,7 +170,7 @@ interface StrategyContent {
   pctIncrease: string;
   effectiveDate: string;
   talkingPoints: string[];
-  serviceLevels: { metric: string; current: string; commitment: string }[];
+  valueAnchors: { point: string; context: string }[];
   buyingPatterns: { insight: string; implication: string }[];
   objections: { objection: string; response: string }[];
 }
@@ -184,11 +186,11 @@ const STRATEGY_BY_POSTURE: Record<string, StrategyContent> = {
       "We’re offering a phased implementation so your finance team can plan around the fiscal calendar.",
       "Our goal is fee stability — this targeted adjustment helps us avoid a larger, broader correction down the road.",
     ],
-    serviceLevels: [
-      { metric: "Engagement delivery rate", current: "97% on-time", commitment: "Maintain 97%+ through Q4 2026" },
-      { metric: "Average response time", current: "48 hours", commitment: "Hold at 48 hours or fewer for all requests" },
-      { metric: "Dedicated engagement team", current: "Named partner + manager", commitment: "No changes to team structure" },
-      { metric: "Urgent deadline support", current: "24-hr turnaround", commitment: "Continue priority staffing at current rates" },
+    valueAnchors: [
+      { point: "Your team stays exactly the same — Partner Greene and Manager Liu, no rotation", context: "Team continuity matters most to long-tenure clients; this removes the biggest switching-cost concern" },
+      { point: "No further fee changes through the end of 2026", context: "Rate certainty is a concrete benefit that offsets the modest 1.5% adjustment" },
+      { point: "Same priority staffing and 24-hour turnaround on urgent deadlines", context: "Reinforces that service quality isn't changing — only the fee is catching up to costs" },
+      { point: "Core audit and tax fees are untouched — this only applies to advisory", context: "Isolating the adjustment to one engagement makes it easier to approve internally" },
     ],
     buyingPatterns: [
       { insight: "All three engagements have renewed annually for 8 consecutive years", implication: "Stable renewal cadence signals low churn risk — relationship-first messaging is appropriate" },
@@ -212,11 +214,11 @@ const STRATEGY_BY_POSTURE: Record<string, StrategyContent> = {
       "We structured this to protect your core services — audit and tax fees see increases under 2%.",
       "Addressing this now with a modest correction prevents a steeper adjustment later in the fiscal year.",
     ],
-    serviceLevels: [
-      { metric: "Engagement delivery rate", current: "97% on-time", commitment: "Target 98%+ with dedicated senior staff" },
-      { metric: "Average response time", current: "48 hours", commitment: "Reduce to 24 hours by Q4 2026" },
-      { metric: "Fee lock period", current: "Annual review", commitment: "Lock new rates through January 2027" },
-      { metric: "Multi-service discount", current: "3-engagement bundle", commitment: "Maintain current bundle pricing" },
+    valueAnchors: [
+      { point: "We're assigning a dedicated senior manager to your account — faster answers, fewer handoffs", context: "Tangible upgrade the client can see immediately; justifies the 2.5% as buying better access" },
+      { point: "Rates are locked through January 2027 — no further adjustments this fiscal year", context: "Fee certainty is the #1 ask from CFOs; lead with this if they push back on timing" },
+      { point: "Your three-engagement bundle pricing stays intact — no change to your volume discount", context: "Reassures them the multi-service relationship is still being rewarded" },
+      { point: "Response times drop to 24 hours standard by Q4, with same-day on urgent items", context: "Concrete improvement they'll feel within one quarter" },
     ],
     buyingPatterns: [
       { insight: "Total engagement value is up 8% YoY driven by advisory scope expansion", implication: "Growth justifies holding multi-service pricing — use this as a retention lever" },
@@ -240,11 +242,11 @@ const STRATEGY_BY_POSTURE: Record<string, StrategyContent> = {
       "Your multi-service relationship keeps your overall increase below the market average of 8-12%.",
       "We’ve timed this to align with your Q3 planning cycle so there are no mid-quarter surprises.",
     ],
-    serviceLevels: [
-      { metric: "Engagement delivery rate", current: "97% on-time", commitment: "Improve to 98%+ with dedicated senior staff" },
-      { metric: "Average response time", current: "48 hours", commitment: "Target same-day for critical items, 24 hours standard" },
-      { metric: "Staff continuity", current: "3-year avg partner tenure", commitment: "Named engagement team retained through FY27" },
-      { metric: "Fee lock period", current: "Annual review", commitment: "Lock new rates through March 2027" },
+    valueAnchors: [
+      { point: "Your named engagement team — Greene, Liu, and associates — stays through FY27, guaranteed", context: "At 3.5%, leading with team continuity reframes the fee as buying stability, not paying more for the same thing" },
+      { point: "Rates locked through March 2027 — one adjustment, then predictability", context: "Positions this as the last pricing conversation for 9+ months" },
+      { point: "Same-day response on critical items, 24 hours on everything else", context: "A measurable improvement they'll notice; pairs well with 'here's what's changing for the better'" },
+      { point: "Your multi-service relationship keeps you well below the 8–12% market average", context: "Anchors the 3.5% against what competitors and peers are seeing" },
     ],
     buyingPatterns: [
       { insight: "Client engages across 3 service lines (Audit, Tax, Advisory) with no single-provider dependency", implication: "Breadth gives us leverage to frame this as a portfolio-wide value proposition" },
@@ -268,11 +270,11 @@ const STRATEGY_BY_POSTURE: Record<string, StrategyContent> = {
       "Your core Audit engagement carries a lower increase than the portfolio average, reflecting its scale and predictability.",
       "The new fee structure locks through Q1 2027 with no additional adjustments planned.",
     ],
-    serviceLevels: [
-      { metric: "Engagement delivery rate", current: "97% on-time", commitment: "Guarantee 98.5%+ with dedicated resource allocation" },
-      { metric: "Average response time", current: "48 hours", commitment: "Priority lane: same-day critical, next-day standard" },
-      { metric: "Dedicated engagement team", current: "Shared manager", commitment: "Upgrade to named partner + senior manager + dedicated associate" },
-      { metric: "Quarterly business review", current: "Ad hoc", commitment: "Scheduled QBR with fee forecasting and scope planning" },
+    valueAnchors: [
+      { point: "You're getting a dedicated three-person team: named partner, senior manager, and associate — no more shared resources", context: "This is a real upgrade from the current model; frame the 5.5% as buying premium access, not just a cost increase" },
+      { point: "Priority response lane — same-day on anything critical, next business day on everything else", context: "Concrete and measurable; the client can hold you to it, which builds trust" },
+      { point: "Quarterly strategy reviews with fee forecasting — no more surprises", context: "Proactive communication is what enterprise clients value most; this shows you're investing in the relationship" },
+      { point: "This is a one-time correction, not a trend — no further adjustments planned through Q1 2027", context: "Takes the fear of 'death by a thousand cuts' off the table" },
     ],
     buyingPatterns: [
       { insight: "Total engagement value has plateaued over the last 3 quarters despite scope expansion", implication: "Growth has stalled — frame the fee correction as enabling continued investment in the account" },
@@ -296,12 +298,12 @@ const STRATEGY_BY_POSTURE: Record<string, StrategyContent> = {
       "This is a one-time correction — no further adjustments are planned through 2027.",
       "We’re pairing this with enhanced service commitments to ensure the value behind every dollar is clear.",
     ],
-    serviceLevels: [
-      { metric: "Engagement delivery rate", current: "97% on-time", commitment: "Guarantee 99%+ with reserved capacity allocation" },
-      { metric: "Average response time", current: "48 hours", commitment: "Priority service: same-day across all engagements" },
-      { metric: "Dedicated engagement team", current: "Shared manager", commitment: "Named partner + senior manager + dedicated associate + specialist" },
-      { metric: "Service guarantee", current: "Best effort", commitment: "Contractual delivery guarantee with penalty SLA" },
-      { metric: "Advisory access", current: "Engagement-scoped", commitment: "Unlimited ad-hoc advisory consultations through FY27" },
+    valueAnchors: [
+      { point: "Full dedicated team: named partner, senior manager, associate, and a subject-matter specialist — reserved just for your account", context: "This is a premium service tier most clients don't get; positions the 8% as accessing a higher level, not just paying more" },
+      { point: "Same-day response across all engagements — not just critical items", context: "The strongest response-time commitment in the book; leads with 'you're our priority'" },
+      { point: "Contractual delivery guarantee with penalty SLA — we're putting skin in the game", context: "This is rare and bold; shows confidence and removes the 'what if service slips' objection before it's raised" },
+      { point: "Unlimited ad-hoc advisory consultations through FY27 — call us anytime, no scope creep charges", context: "Turns the fee into an all-access pass; reframes the relationship from transactional to strategic" },
+      { point: "Rates locked through 2027 — this is the last pricing conversation for 18 months", context: "At 8%, the lock period needs to be long enough to feel proportional; 18 months does that" },
     ],
     buyingPatterns: [
       { insight: "Account has been on legacy fee rates for 3+ years with no adjustment", implication: "Largest gap-to-market in the portfolio — correction is overdue and defensible" },
@@ -370,87 +372,84 @@ const sliderSx = {
   "& .MuiSlider-rail": { bgcolor: "rgba(0,0,0,0.12)" },
 };
 
-function RadarChart({
+function PostureGauge({
   driverValues,
   drivers,
+  showAi,
 }: {
   driverValues: Record<string, number>;
   drivers: DriverConfig[];
+  showAi: boolean;
 }) {
-  const cx = 100, cy = 100, radius = 60;
-  const n = drivers.length;
+  const max = drivers.length * 2;
+  const userTotal = drivers.reduce((s, d) => s + d.aggressiveness[driverValues[d.key]], 0);
+  const aiTotal = drivers.reduce((s, d) => s + d.aggressiveness[d.aiValue], 0);
+  const userPct = (userTotal / max) * 100;
+  const aiPct = (aiTotal / max) * 100;
 
-  const getPoint = (index: number, value: number, maxVal = 2) => {
-    const angle = (Math.PI * 2 * index) / n - Math.PI / 2;
-    const dist = (value / maxVal) * radius;
-    return { x: cx + dist * Math.cos(angle), y: cy + dist * Math.sin(angle) };
-  };
-
-  const toPolygon = (values: number[]) =>
-    values.map((v, i) => {
-      const p = getPoint(i, v);
-      return `${p.x},${p.y}`;
-    }).join(" ");
-
-  const currentValues = drivers.map((d) => driverValues[d.key]);
-  const aiValues = drivers.map((d) => d.aiValue);
-  const gridLevels = [0.67, 1.33, 2];
+  const stops = HEAT_DESCRIPTORS;
 
   return (
-    <svg viewBox="0 0 200 200" width={140} height={140} style={{ display: "block" }}>
-      {gridLevels.map((level, i) => (
-        <polygon
-          key={i}
-          points={Array.from({ length: n }, (_, j) => {
-            const p = getPoint(j, level);
-            return `${p.x},${p.y}`;
-          }).join(" ")}
-          fill="none"
-          stroke="rgba(0,0,0,0.08)"
-          strokeWidth="0.75"
-        />
-      ))}
-      {Array.from({ length: n }, (_, i) => {
-        const p = getPoint(i, 2);
-        return (
-          <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(0,0,0,0.08)" strokeWidth="0.75" />
-        );
-      })}
-      <polygon
-        points={toPolygon(aiValues)}
-        fill="rgba(240,139,29,0.10)"
-        stroke="#f08b1d"
-        strokeWidth="1.5"
-        strokeDasharray="4 2"
-      />
-      <polygon
-        points={toPolygon(currentValues)}
-        fill="rgba(24,95,165,0.15)"
-        stroke="#185FA5"
-        strokeWidth="1.5"
-      />
-      {currentValues.map((v, i) => {
-        const p = getPoint(i, v);
-        return <circle key={i} cx={p.x} cy={p.y} r="3" fill="#185FA5" />;
-      })}
-      {RADAR_LABELS.map((label, i) => {
-        const p = getPoint(i, 2.8);
-        return (
-          <text
-            key={i}
-            x={p.x}
-            y={p.y}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize="9"
-            fill="rgba(0,0,0,0.45)"
-            fontFamily="Inter, sans-serif"
-          >
-            {label}
-          </text>
-        );
-      })}
-    </svg>
+    <Box sx={{ width: "100%" }}>
+      {/* Spectrum bar */}
+      <Box sx={{ position: "relative", height: 10, borderRadius: "5px", background: "linear-gradient(90deg, #E1F5EE 0%, #FAEEDA 40%, #FAECE7 100%)", mb: 0.5 }}>
+        {/* AI marker — diamond shape, offset above */}
+        {showAi && (
+          <Tooltip title="AI suggested" arrow placement="top">
+            <Box sx={{
+              position: "absolute",
+              top: -8,
+              left: `${aiPct}%`,
+              transform: "translateX(-50%) rotate(45deg)",
+              width: 10,
+              height: 10,
+              bgcolor: "#f08b1d",
+              border: "2px solid white",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+              transition: "left 0.4s ease",
+              zIndex: 1,
+              cursor: "default",
+            }} />
+          </Tooltip>
+        )}
+        {/* User marker — circle, offset below */}
+        <Tooltip title="Your settings" arrow placement="bottom">
+          <Box sx={{
+            position: "absolute",
+            top: 2,
+            left: `${userPct}%`,
+            transform: "translateX(-50%)",
+            width: 14,
+            height: 14,
+            borderRadius: "50%",
+            bgcolor: "#185FA5",
+            border: "2.5px solid white",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+            transition: "left 0.4s ease",
+            zIndex: 2,
+            cursor: "default",
+          }} />
+        </Tooltip>
+      </Box>
+      {/* Labels */}
+      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Typography sx={{ fontSize: 9, color: "rgba(0,0,0,0.4)", fontWeight: 500 }}>Conservative</Typography>
+        <Typography sx={{ fontSize: 9, color: "rgba(0,0,0,0.4)", fontWeight: 500 }}>Aggressive</Typography>
+      </Box>
+      {/* Legend */}
+      <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#185FA5" }} />
+          <Typography sx={{ fontSize: 9, color: "rgba(0,0,0,0.45)" }}>Your settings</Typography>
+        </Box>
+        {showAi && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Box sx={{ width: 7, height: 7, bgcolor: "#f08b1d", transform: "rotate(45deg)" }} />
+            <Typography sx={{ fontSize: 9, color: "rgba(0,0,0,0.45)" }}>AI suggested</Typography>
+          </Box>
+        )}
+      </Box>
+    </Box>
   );
 }
 
@@ -494,39 +493,37 @@ function GeneratedContent({ posture }: { posture: string }) {
           <DescriptionIcon sx={sectionIconSx} />
           Talking Points
         </Typography>
-        <Box component="ol" sx={{ pl: 2.5, m: 0, "& li": { fontSize: 13, color: "#000", mb: 1, lineHeight: 1.7, pl: 0.5 } }}>
+        <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.5)", mb: 2, mt: -1 }}>
+          These are sequenced — open with context, make the ask, then reinforce with value.
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, m: 0, "& li": { fontSize: 13, color: "#000", mb: 1, lineHeight: 1.7, pl: 0.5 } }}>
           {content.talkingPoints.map((tp, i) => <li key={i}>{tp}</li>)}
         </Box>
       </Box>
 
       <Divider sx={{ mb: 3.5 }} />
 
-      {/* Service Levels */}
+      {/* Value Anchors */}
       <Box sx={{ mb: 3.5 }}>
         <Typography sx={sectionHeadingSx}>
           <AutoAwesomeIcon sx={sectionIconSx} />
-          Service Level Commitments
+          What You Can Tell Them They&rsquo;re Getting
         </Typography>
-        <TableContainer sx={{ border: "1px solid #eee", borderRadius: "6px" }}>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ bgcolor: "#f5f5f5" }}>
-                <TableCell sx={{ ...tableCellSx, fontWeight: 600, color: "rgba(0,0,0,0.7)", borderBottom: "1px solid #ddd" }}>Metric</TableCell>
-                <TableCell sx={{ ...tableCellSx, fontWeight: 600, color: "rgba(0,0,0,0.7)", borderBottom: "1px solid #ddd", textAlign: "center" }}>Current</TableCell>
-                <TableCell sx={{ ...tableCellSx, fontWeight: 600, color: "rgba(0,0,0,0.7)", borderBottom: "1px solid #ddd" }}>Post-Adjustment Commitment</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {content.serviceLevels.map((row, idx) => (
-                <TableRow key={idx} sx={{ bgcolor: idx % 2 === 0 ? "#fff" : "#fafafa", "&:last-child td": { borderBottom: 0 } }}>
-                  <TableCell sx={{ ...tableCellSx, fontWeight: 500 }}>{row.metric}</TableCell>
-                  <TableCell sx={{ ...tableCellSx, textAlign: "center", color: "rgba(0,0,0,0.55)" }}>{row.current}</TableCell>
-                  <TableCell sx={{ ...tableCellSx, color: "#0F6E56", fontWeight: 500 }}>{row.commitment}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.5)", mb: 2, mt: -1 }}>
+          Say these out loud — each one reframes the fee adjustment as something concrete the client receives.
+        </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+          {content.valueAnchors.map((row, idx) => (
+            <Paper key={idx} elevation={0} sx={{ p: 2, borderRadius: "8px", border: "1px solid rgba(0,0,0,0.08)", bgcolor: "white" }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#00446a", lineHeight: 1.5, mb: 0.5 }}>
+                &ldquo;{row.point}&rdquo;
+              </Typography>
+              <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,0.45)", lineHeight: 1.5, fontStyle: "italic" }}>
+                {row.context}
+              </Typography>
+            </Paper>
+          ))}
+        </Box>
       </Box>
 
       <Divider sx={{ mb: 3.5 }} />
@@ -536,6 +533,9 @@ function GeneratedContent({ posture }: { posture: string }) {
         <Typography sx={sectionHeadingSx}>
           <DescriptionIcon sx={sectionIconSx} />
           Buying Pattern Analysis
+        </Typography>
+        <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.5)", mb: 2, mt: -1 }}>
+          Signals from the account data — use these to time the conversation and read the room.
         </Typography>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           {content.buyingPatterns.map((bp, idx) => (
@@ -558,6 +558,9 @@ function GeneratedContent({ posture }: { posture: string }) {
         <Typography sx={sectionHeadingSx}>
           <DescriptionIcon sx={sectionIconSx} />
           Anticipated Objections
+        </Typography>
+        <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.5)", mb: 2, mt: -1 }}>
+          The most likely pushbacks for this posture — scan these before the call so nothing catches you off guard.
         </Typography>
         <TableContainer sx={{ border: "1px solid #eee", borderRadius: "6px" }}>
           <Table size="small">
@@ -637,7 +640,7 @@ export default function PreCallPlanPage() {
     const max = SLIDER_DRIVERS.length * 2;
     const pct = Math.round((total / max) * 100);
     const idx = Math.min(4, Math.floor(pct / 25));
-    return { pct, descriptor: HEAT_DESCRIPTORS[idx] };
+    return { pct, descriptor: HEAT_DESCRIPTORS[idx], recIncrease: POSTURE_PCT[idx] };
   }, [driverValues]);
 
   const aiDriverCount = Object.keys(aiApplied).length;
@@ -661,7 +664,8 @@ export default function PreCallPlanPage() {
     const applied: Record<string, boolean> = {};
     SLIDER_DRIVERS.forEach((d, i) => {
       setTimeout(() => {
-        setDriverValues((prev) => ({ ...prev, [d.key]: d.aiValue }));
+        const nudged = d.aiValue > 0 ? d.aiValue - 1 : 0;
+        setDriverValues((prev) => ({ ...prev, [d.key]: nudged }));
         applied[d.key] = true;
         setAiApplied({ ...applied });
         if (i === SLIDER_DRIVERS.length - 1) {
@@ -804,27 +808,24 @@ export default function PreCallPlanPage() {
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0, 68, 106);
-    doc.text("Service Level Commitments", margin, y);
+    doc.text("What You Can Tell Them They're Getting", margin, y);
     y += 20;
 
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(100, 100, 100);
-    const slCols = [0, 160, 280];
-    ["Metric", "Current", "Commitment"].forEach((h, i) => doc.text(h, margin + slCols[i], y));
-    y += 4;
-    doc.line(margin, y, pw - margin, y);
-    y += 14;
-
+    doc.setFontSize(9.5);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(40, 40, 40);
-    content.serviceLevels.forEach((sl) => {
-      checkPage(30);
-      doc.text(safe(sl.metric), margin + slCols[0], y);
-      doc.text(safe(sl.current), margin + slCols[1], y);
-      const commitLines = doc.splitTextToSize(safe(sl.commitment), usable - slCols[2] - 5);
-      doc.text(commitLines, margin + slCols[2], y);
-      y += Math.max(commitLines.length * 12, 16) + 4;
+    content.valueAnchors.forEach((row) => {
+      checkPage(40);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 68, 106);
+      const pointLines = doc.splitTextToSize(`"${safe(row.point)}"`, usable - 10);
+      doc.text(pointLines, margin, y);
+      y += pointLines.length * 12 + 2;
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(120, 120, 120);
+      const ctxLines = doc.splitTextToSize(safe(row.context), usable - 10);
+      doc.text(ctxLines, margin, y);
+      y += ctxLines.length * 12 + 8;
     });
     y += 15;
 
@@ -976,80 +977,76 @@ export default function PreCallPlanPage() {
               position: "relative",
             }}
           >
+            <Tooltip
+              title={`DEMO TALK TRACK — PRE-CALL PLAN\n\nThis is where the partner prepares before a pricing conversation.\n\n1. DRIVERS (left sliders): These set the negotiation posture. Each driver — priority, tenure, sensitivity, breadth, revenue — shifts the strategy from conservative to aggressive. The AI pre-fills based on account data, but the partner can override.\n\n2. POSTURE GAUGE: Shows at a glance where you sit on the conservative-to-aggressive spectrum. The blue dot is your settings, the orange ring is the AI suggestion.\n\n3. PRICING POSTURE: The model translates driver settings into a named strategy (e.g. "Balanced approach") with a specific % increase recommendation.\n\n4. RIGHT PANEL: Auto-generates talking points, objection handling, service commitments, and buying patterns — all tailored to the posture and this specific client.\n\n5. KEY INSIGHT: Everything on this page is connected. Move one slider and the talking points, objection responses, and recommended % all update. The partner walks into the meeting with a complete, data-backed playbook.`}
+              arrow
+              placement="right-start"
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: "white",
+                    color: "#333",
+                    border: "1px solid #D97C14",
+                    fontSize: 11,
+                    lineHeight: 1.6,
+                    maxWidth: 320,
+                    p: 2,
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                    whiteSpace: "pre-line",
+                  },
+                },
+                arrow: { sx: { color: "white", "&::before": { border: "1px solid #D97C14" } } },
+              }}
+            >
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 10,
+                  right: 10,
+                  width: 16,
+                  height: 16,
+                  borderRadius: "3px",
+                  bgcolor: "rgba(0,0,0,0.06)",
+                  cursor: "pointer",
+                  zIndex: 1,
+                  "&:hover": { bgcolor: "rgba(0,0,0,0.12)" },
+                  transition: "background-color 0.15s",
+                }}
+              />
+            </Tooltip>
             <Box sx={{ flex: 1, overflowY: "auto" }}>
               {/* Radar Chart & Pricing Posture */}
               <Box data-tour="radar-posture" sx={{ px: 2.5, py: 2, borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-                <Box sx={{ display: "flex", gap: 0.5, alignItems: "flex-start" }}>
-                  <Box sx={{ flexShrink: 0 }}>
-                    <RadarChart driverValues={driverValues} drivers={SLIDER_DRIVERS} />
-                  </Box>
-                  <Box sx={{ flex: 1, pt: 0.5 }}>
-                    <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.45)", textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.25 }}>
-                      Pricing posture
-                    </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.25 }}>
-                      <Typography
-                        key={posture.descriptor}
-                        sx={{
-                          fontSize: 16,
-                          fontWeight: 700,
-                          color: recalculating ? "rgba(0,0,0,0.3)" : "#000",
-                          transition: "color 0.2s ease",
-                        }}
-                      >
-                        {posture.descriptor}
-                      </Typography>
-                      {recalculating && (
-                        <CircularProgress
-                          size={14}
-                          sx={{
-                            color: "#f08b1d",
-                            animation: "rcFadeIn 0.15s ease",
-                            "@keyframes rcFadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
-                          }}
-                        />
-                      )}
-                    </Box>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                      {SLIDER_DRIVERS.map((d) => {
-                        const val = driverValues[d.key];
-                        const badge = d.badgeStyles[val];
-                        return (
-                          <Box key={d.key} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                            <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.4)", width: 58, flexShrink: 0 }}>
-                              {RADAR_LABELS[SLIDER_DRIVERS.indexOf(d)]}
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontSize: 11,
-                                fontWeight: 500,
-                                px: 1,
-                                py: 0.25,
-                                borderRadius: "20px",
-                                border: `1.5px solid ${badge.color}30`,
-                                color: badge.color,
-                                lineHeight: 1.3,
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {d.labels[val]}
-                            </Typography>
-                          </Box>
-                        );
-                      })}
-                    </Box>
-                  </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                  <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.45)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Pricing posture
+                  </Typography>
+                  <Typography
+                    key={posture.descriptor}
+                    sx={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: recalculating ? "rgba(0,0,0,0.3)" : "#000",
+                      transition: "color 0.2s ease",
+                    }}
+                  >
+                    {posture.descriptor}
+                  </Typography>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: recalculating ? "rgba(0,0,0,0.2)" : "#2e7d32", transition: "color 0.2s ease" }}>
+                    {posture.recIncrease} avg increase
+                  </Typography>
+                  {recalculating && (
+                    <CircularProgress
+                      size={14}
+                      sx={{
+                        color: "#f08b1d",
+                        animation: "rcFadeIn 0.15s ease",
+                        "@keyframes rcFadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
+                      }}
+                    />
+                  )}
                 </Box>
-                <Box sx={{ display: "flex", gap: 2.5, mt: 1.25, pl: 0.5 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#185FA5" }} />
-                    <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.45)" }}>Your settings</Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#f08b1d" }} />
-                    <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.45)" }}>AI suggested</Typography>
-                  </Box>
-                </Box>
+                <PostureGauge driverValues={driverValues} drivers={SLIDER_DRIVERS} showAi />
               </Box>
 
               {/* AI Suggestion Banner */}
@@ -1072,24 +1069,34 @@ export default function PreCallPlanPage() {
                       <Typography sx={{ fontSize: 12, color: "#0C447C", flex: 1, lineHeight: 1.4 }}>
                         AI has suggested drivers based on this account&apos;s data.
                       </Typography>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={applyAI}
-                        sx={{
-                          fontSize: 11,
-                          fontWeight: 500,
-                          color: "#185FA5",
-                          borderColor: "#85B7EB",
-                          textTransform: "none",
-                          px: 1,
-                          py: 0.25,
-                          minWidth: 0,
-                          "&:hover": { bgcolor: "#B5D4F4", borderColor: "#85B7EB" },
+                      <Tooltip
+                        title={"The model sees signals in the account history and market data that support a more aggressive posture than you’d typically set manually. Apply to see the difference."}
+                        arrow
+                        placement="top"
+                        slotProps={{
+                          tooltip: { sx: { bgcolor: "white", color: "#0C447C", border: "1px solid #85B7EB", fontSize: 11, lineHeight: 1.5, maxWidth: 220, p: 1.25, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" } },
+                          arrow: { sx: { color: "white", "&::before": { border: "1px solid #85B7EB" } } },
                         }}
                       >
-                        Apply
-                      </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={applyAI}
+                          sx={{
+                            fontSize: 11,
+                            fontWeight: 500,
+                            color: "#185FA5",
+                            borderColor: "#85B7EB",
+                            textTransform: "none",
+                            px: 1,
+                            py: 0.25,
+                            minWidth: 0,
+                            "&:hover": { bgcolor: "#B5D4F4", borderColor: "#85B7EB" },
+                          }}
+                        >
+                          Apply
+                        </Button>
+                      </Tooltip>
                     </>
                   ) : aiBannerState === "applying" ? (
                     <>
@@ -1141,7 +1148,7 @@ export default function PreCallPlanPage() {
 
                     return (
                       <Box key={driver.key} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, width: 130, flexShrink: 0 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 148, flexShrink: 0 }}>
                           <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#000", lineHeight: 1.3 }}>
                             {driver.label}
                           </Typography>
@@ -1215,12 +1222,19 @@ export default function PreCallPlanPage() {
 
                 {/* Customer Buying Priority */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, width: 130, flexShrink: 0 }}>
-                    <TuneIcon sx={{ fontSize: 14, color: "rgba(0,0,0,0.35)" }} />
-                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#000" }}>
-                      Buying priority
-                    </Typography>
-                  </Box>
+                  <Tooltip
+                    title="What matters most to this client when evaluating the engagement. This shapes the talking points and objection handling — e.g. a client focused on 'Fee sensitivity' gets ROI justifications, while 'Engagement continuity' gets stability and risk-of-change framing."
+                    arrow
+                    placement="top"
+                    slotProps={{ tooltip: { sx: { bgcolor: "white", color: "#333", border: "1px solid #e0e0e0", fontSize: 11, lineHeight: 1.5, maxWidth: 240, p: 1.25, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" } }, arrow: { sx: { color: "white", "&::before": { border: "1px solid #e0e0e0" } } } }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, width: 130, flexShrink: 0, cursor: "help" }}>
+                      <TuneIcon sx={{ fontSize: 14, color: "rgba(0,0,0,0.35)" }} />
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#000" }}>
+                        Buying priority
+                      </Typography>
+                    </Box>
+                  </Tooltip>
                   <FormControl size="small" sx={{ flex: 1 }}>
                     <Select
                       value={buyingPriority}
@@ -1388,7 +1402,44 @@ export default function PreCallPlanPage() {
           </Box>
 
         {/* Main content area */}
-        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", bgcolor: "#f5f5f5" }}>
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", bgcolor: "#f5f5f5", position: "relative" }}>
+            <Tooltip
+              title={`DEMO TALK TRACK — GENERATED OUTPUT\n\n• This panel auto-generates a complete pre-call playbook based on the drivers you set\n\n• TALKING POINTS: Bullet-ready phrases the partner can use in the conversation — not scripts, just nudges\n\n• OBJECTION HANDLING: Pre-built responses to the 2–3 most likely pushbacks, tailored to this client's buying priority\n\n• BUYING PATTERNS: Historical signals (win/loss trends, seasonal timing, competitor activity) pulled from account data\n\n• SERVICE COMMITMENTS: What the firm is promising at this price point — helps the partner anchor value, not just cost\n\n• Everything regenerates live when you change a driver on the left — show the audience a slider change and watch the content update`}
+              arrow
+              placement="left-start"
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: "white",
+                    color: "#333",
+                    border: "1px solid #D97C14",
+                    fontSize: 11,
+                    lineHeight: 1.6,
+                    maxWidth: 320,
+                    p: 2,
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                    whiteSpace: "pre-line",
+                  },
+                },
+                arrow: { sx: { color: "white", "&::before": { border: "1px solid #D97C14" } } },
+              }}
+            >
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 10,
+                  right: 10,
+                  width: 16,
+                  height: 16,
+                  borderRadius: "3px",
+                  bgcolor: "rgba(0,0,0,0.06)",
+                  cursor: "pointer",
+                  zIndex: 1,
+                  "&:hover": { bgcolor: "rgba(0,0,0,0.12)" },
+                  transition: "background-color 0.15s",
+                }}
+              />
+            </Tooltip>
           {/* Title bar */}
           <Box
             sx={{

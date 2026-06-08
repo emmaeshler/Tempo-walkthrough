@@ -20,11 +20,23 @@ import {
   Chip,
   CircularProgress,
   Tooltip,
+  Popover,
+  Radio,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Switch,
+  FormControlLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   Home as HomeIcon,
   Bookmark as BookmarkIcon,
   Description as DescriptionIcon,
+  Folder as FolderIcon,
+  ExpandMore as ExpandMoreIcon,
+  Person as PersonIcon,
   ChevronRight as ChevronRightIcon,
   ChevronLeft as ChevronLeftIcon,
   FilterList as FilterListIcon,
@@ -43,6 +55,12 @@ import {
   Insights as InsightsIcon,
   InfoOutlined as InfoOutlinedIcon,
   BarChart as BarChartIcon,
+  MoreVert as MoreVertIcon,
+  Search as SearchIcon,
+  Add as AddIconAlt,
+  Refresh as RefreshIcon,
+  RadioButtonUnchecked as RadioUncheckedIcon,
+  SwapHoriz as SwapHorizIcon,
 } from "@mui/icons-material";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -62,18 +80,30 @@ import AnalyticsDrawer from "../components/AnalyticsDrawer";
 const fmt = (n: number | null) => n == null ? "—" : "$" + n.toLocaleString("en-US");
 const pct = (n: number | null) => n == null ? "—" : n.toFixed(1) + "%";
 
-const kpiCards = [
-  { title: "REVIEW PROGRESS", value: "67% Complete" },
-  { title: "NEEDS REVIEW #", value: "100 Items" },
-  { title: "RECOMMENDED IMPACT", value: "$2,450,000" },
-  { title: "REVISED IMPACT", value: "$1,875,000" },
-];
+function computeKpis(rows: RowData[]) {
+  const total = rows.length;
+  const complete = rows.filter(r => r.status === "Complete").length;
+  const needsReview = rows.filter(r => r.status === "Needs Review").length;
+  const recImpact = rows.reduce((s, r) => s + r.recFixedFee - r.currentFixedFee, 0);
+  const revisedImpact = rows.reduce((s, r) => s + r.revisedImpact, 0);
+  const avgIncrease = total > 0 ? rows.reduce((s, r) => s + r.recPriceIncreasePct, 0) / total : 0;
+  const totalCurrentFees = rows.reduce((s, r) => s + r.currentFixedFee, 0);
+  const totalRevisedFees = rows.reduce((s, r) => s + r.revisedTotalFee, 0);
+  return [
+    { title: "REVIEW PROGRESS", value: total > 0 ? `${Math.round((complete / total) * 100)}% Complete` : "—" },
+    { title: "NEEDS REVIEW #", value: `${needsReview} Items` },
+    { title: "RECOMMENDED IMPACT", value: `$${Math.round(recImpact).toLocaleString("en-US")}` },
+    { title: "REVISED IMPACT", value: `$${Math.round(revisedImpact).toLocaleString("en-US")}` },
+    { title: "AVG REC. INCREASE", value: `${avgIncrease.toFixed(1)}%` },
+    { title: "TOTAL CURRENT FEES", value: `$${Math.round(totalCurrentFees).toLocaleString("en-US")}` },
+    { title: "TOTAL REVISED FEES", value: `$${Math.round(totalRevisedFees).toLocaleString("en-US")}` },
+  ];
+}
 
 const statusColors: Record<string, { bg: string; color: string }> = {
   "Needs Review": { bg: "#fff3e0", color: "#e65100" },
-  "In Progress": { bg: "#e3f2fd", color: "#1565c0" },
-  "Approved": { bg: "#e8f5e9", color: "#2e7d32" },
-  "Submitted": { bg: "#ede7f6", color: "#4527a0" },
+  "Complete": { bg: "#e8f5e9", color: "#2e7d32" },
+  "Revised": { bg: "#e3f2fd", color: "#1565c0" },
 };
 
 const commColors: Record<string, { bg: string; color: string }> = {
@@ -108,7 +138,7 @@ interface Column {
 const columns: Column[] = [
   {
     key: "hasComments",
-    label: "Has Comments",
+    label: "Has\nComments",
     width: 50,
     align: "center",
     render: (row) => row.hasComments ? <ChatBubbleOutlineIcon sx={{ fontSize: 18, color: "#00446a" }} /> : null,
@@ -173,17 +203,17 @@ const columns: Column[] = [
       </Box>
     ),
   },
-  { key: "recFixedFee", label: "Rec Fixed Fee", width: 130, align: "right", render: (row) => <Box sx={{ bgcolor: "#b3e5fc", px: 1, py: 0.25, borderRadius: "2px", display: "inline-block" }}>{fmt(row.recFixedFee)}</Box> },
-  { key: "revisedFixedFee", label: "Revised Fixed Fee", width: 130, align: "right", render: (row) => fmt(row.revisedFixedFee) },
-  { key: "revisedPriceIncreasePct", label: "Revised Price Increase %", width: 150, align: "right", render: (row) => pct(row.revisedPriceIncreasePct) },
+  { key: "recFixedFee", label: "Rec Fixed Fee", width: 130, align: "right", render: (row) => fmt(row.recFixedFee) },
+  { key: "revisedFixedFee", label: "Revised Fixed Fee", width: 130, align: "right", render: (row) => <Box sx={{ bgcolor: "#b3e5fc", px: 1, py: 0.25, borderRadius: "2px", textAlign: "right" }}>{fmt(row.revisedFixedFee)}</Box> },
+  { key: "revisedPriceIncreasePct", label: "Revised Price Increase %", width: 150, align: "right", render: (row) => <Box sx={{ bgcolor: "#b3e5fc", px: 1, py: 0.25, borderRadius: "2px", textAlign: "right" }}>{pct(row.revisedPriceIncreasePct)}</Box> },
   { key: "currentAdminFee", label: "Current Admin Fee", width: 130, align: "right", render: (row) => fmt(row.currentAdminFee) },
-  { key: "revisedAdminFee", label: "Revised Admin Fee", width: 130, align: "right", render: (row) => fmt(row.revisedAdminFee) },
+  { key: "revisedAdminFee", label: "Revised Admin Fee", width: 130, align: "right", render: (row) => <Box sx={{ bgcolor: "#b3e5fc", px: 1, py: 0.25, borderRadius: "2px", textAlign: "right" }}>{fmt(row.revisedAdminFee)}</Box> },
   {
     key: "revisedTotalFee",
     label: "Revised Total Fee",
     width: 130,
     align: "right",
-    render: (row) => <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{fmt(row.revisedTotalFee)}</Typography>,
+    render: (row) => <Box sx={{ bgcolor: "#b3e5fc", px: 1, py: 0.25, borderRadius: "2px", textAlign: "right" }}><Typography sx={{ fontSize: 12, fontWeight: 600 }}>{fmt(row.revisedTotalFee)}</Typography></Box>,
   },
   {
     key: "revisedImpact",
@@ -192,7 +222,7 @@ const columns: Column[] = [
     align: "right",
     render: (row) => {
       const positive = row.revisedImpact >= 0;
-      return <Typography sx={{ fontSize: 12, color: positive ? "#2e7d32" : "#c62828", fontWeight: 500 }}>{positive ? "+" : ""}{fmt(row.revisedImpact)}</Typography>;
+      return <Box sx={{ bgcolor: "#b3e5fc", px: 1, py: 0.25, borderRadius: "2px", textAlign: "right" }}><Typography sx={{ fontSize: 12, color: positive ? "#2e7d32" : "#c62828", fontWeight: 500 }}>{positive ? "+" : ""}{fmt(row.revisedImpact)}</Typography></Box>;
     },
   },
   {
@@ -301,10 +331,10 @@ function renderBold(text: string, highlights?: string[]): React.ReactNode[] {
 const etpFlows: Record<string, { thinkingDelay: number; thinkingMessage?: string; response: Omit<EtpMsg, "id" | "role"> }> = {
   "internal-explanation": {
     thinkingDelay: 2000,
-    thinkingMessage: "Analyzing pricing factors...",
+    thinkingMessage: "Analyzing margin and peer data...",
     response: {
       title: "Internal Price Explanation",
-      content: "Fee rates have increased for this engagement by **6.5% since the last review period**, driven primarily by increased labor costs and expanded service scope.\n\n**Labor rate adjustments** account for 4.2% of the increase, reflecting market-rate corrections for senior audit and advisory staff.\n\n**Scope expansion** from new regulatory requirements (ASC 842 lease accounting, ESG reporting) adds approximately 2.3% to the engagement cost.\n\nThis client's retention bucket and tenure suggest strong relationship stability, making a well-positioned price increase both defensible and expected.",
+      content: "**Margin shortfall breakdown:**\n• Realized margin: **18.3%** vs. peer avg **24.1%** (−5.8pp gap)\n• Product cost driver: full-scope audit with SOX 404 testing + multi-entity consolidation requires 3 senior staff × 6 weeks — higher delivery cost than single-entity peers\n• Client size effect: $285K engagement carries similar fixed infrastructure cost (quality review, IT audit, independence checks) as $400K+ peers, compressing margin\n\n**Why 9.0% and not higher:**\nMeridian has accepted increases in the **6–8% range** over the past 3 cycles. A 9.0% increase is at the upper bound of their historical tolerance. Pushing to 12%+ (what pure margin math suggests) risks a pricing conversation that delays renewal.\n\n**Product context:** The SOX 404 and multi-entity scope are non-negotiable — these aren't optional add-ons. The model factors this into the recommendation: you can't scope-reduce your way to margin parity here.",
       suggestions: [
         { label: "Give Me Client Talking Points", inputText: "Give me client talking points", flowKey: "talking-points" },
         { label: "Anticipate Objections", inputText: "Anticipate objections", flowKey: "anticipate-objections" },
@@ -352,10 +382,49 @@ const etpFlows: Record<string, { thinkingDelay: number; thinkingMessage?: string
     thinkingMessage: "Finding similar engagements...",
     response: {
       title: "Top 5 Similar Engagements",
-      content: "1. **Meridian Health Systems** — Audit & Assurance, Gold retention — $310,650 — 9.0% increase — Accepted\n2. **Summit Healthcare Group** — Compliance Audit, Platinum retention — $352,000 — 10.0% increase — In Progress\n3. **Pinnacle Consumer Brands** — Full Acctg Outsourcing, Silver retention — $171,600 — 10.0% increase — Accepted\n4. **Vanguard Senior Living** — Advisory Services, Gold retention — $302,500 — 10.0% increase — Accepted\n5. **National Care Alliance** — Operational Consulting, Platinum retention — $572,000 — 10.0% increase — In Progress\n\nAverage accepted increase: **9.7%** | Average fee: **$341,750** | Current engagement is within the accepted range.",
+      content: "1. **Meridian Health Systems** — Audit & Assurance, Gold retention — $310,650 — 9.0% increase — Complete\n2. **Summit Healthcare Group** — Compliance Audit, Platinum retention — $352,000 — 10.0% increase — Needs Review\n3. **Pinnacle Consumer Brands** — Full Acctg Outsourcing, Silver retention — $171,600 — 10.0% increase — Complete\n4. **Vanguard Senior Living** — Advisory Services, Gold retention — $302,500 — 10.0% increase — Revised\n5. **National Care Alliance** — Operational Consulting, Platinum retention — $572,000 — 10.0% increase — Needs Review\n\nAverage accepted increase: **9.7%** | Average fee: **$341,750** | Current engagement is within the accepted range.",
       suggestions: [
         { label: "Get Internal Explanation", inputText: "Get internal explanation", flowKey: "internal-explanation" },
         { label: "Start Over", inputText: "Start over", flowKey: "start-over" },
+      ],
+    },
+  },
+  "why-9-pct": {
+    thinkingDelay: 1800,
+    thinkingMessage: "Analyzing historical acceptance and model constraints...",
+    response: {
+      title: "Why 9.0% — Not Higher",
+      content: "The model balances **margin recovery** against **acceptance probability**.\n\n**Pure margin math says 13.4%** — that's what it would take to reach the 24.1% peer average in one cycle. But Meridian's acceptance history caps practical increases:\n• 2023 cycle: accepted **6.2%**\n• 2024 cycle: accepted **7.8%**\n• 2025 cycle: accepted **8.1%**\n\nThe model fits a tolerance curve to these data points and finds **9.0% is the 85th-percentile bound** — the highest increase with ≥85% predicted acceptance. Going to 10%+ drops acceptance probability to ~62%, which the model flags as high-risk for a Gold-tier retention client.\n\nThe remaining margin gap can be closed over **2 cycles** at lower risk than a single aggressive adjustment.",
+      suggestions: [
+        { label: "What If We Go Below 9%?", inputText: "What if we go below 9%?", flowKey: "below-9-scenario" },
+        { label: "Break Down the Margin Gap", inputText: "Break down the margin gap", flowKey: "margin-breakdown" },
+        { label: "Give Me Client Talking Points", inputText: "Give me client talking points", flowKey: "talking-points" },
+      ],
+    },
+  },
+  "margin-breakdown": {
+    thinkingDelay: 1600,
+    thinkingMessage: "Decomposing margin drivers...",
+    response: {
+      title: "Margin Gap Breakdown",
+      content: "**Current realized margin: 18.3%** vs. peer average **24.1%** (−5.8pp)\n\nThe gap decomposes into three drivers:\n\n• **Product complexity** (−3.2pp) — SOX 404 + multi-entity consolidation requires 40% more senior staff hours than single-entity peers\n• **Client size effect** (−1.8pp) — $285K fee carries the same fixed overhead (quality review, IT audit, independence) as $400K+ engagements\n• **Rate compression** (−0.8pp) — Blended hourly rate is 6% below band average, legacy pricing from initial engagement win\n\n**What 9.0% addresses:** The increase recovers **3.4pp** of the 5.8pp gap, primarily closing the rate compression and partially offsetting the size effect. The remaining **2.4pp** is structural (product complexity + fixed overhead) and requires either scope repricing or a second-cycle adjustment.",
+      suggestions: [
+        { label: "Why 9% and Not Higher?", inputText: "Why 9% and not higher?", flowKey: "why-9-pct" },
+        { label: "Show Peer Comparisons", inputText: "Show peer comparisons", flowKey: "similar-engagements" },
+        { label: "Anticipate Objections", inputText: "Anticipate objections", flowKey: "anticipate-objections" },
+      ],
+    },
+  },
+  "below-9-scenario": {
+    thinkingDelay: 1500,
+    thinkingMessage: "Running scenario analysis...",
+    response: {
+      title: "Scenario: Below 9%",
+      content: "**If you go to 7%** (client's recent comfort zone):\n• Revised fee: **$448,350** (vs. $456,750 at 9%)\n• Margin moves to **20.1%** — still 4.0pp below peer average\n• Acceptance probability: **~95%**\n• Leaves **$8,400/year** on the table vs. the 9% recommendation\n\n**If you go to 5%:**\n• Revised fee: **$439,950**\n• Margin moves to **19.2%** — 4.9pp below peers, barely improving from current\n• You'd need a **12%+ increase** next cycle to catch up — much harder to justify\n\n**The risk:** Below 7%, the model flags this engagement as a **multi-cycle margin trap** — each under-priced cycle makes the next correction steeper and harder to get accepted.",
+      suggestions: [
+        { label: "Why 9% and Not Higher?", inputText: "Why 9% and not higher?", flowKey: "why-9-pct" },
+        { label: "Give Me Client Talking Points", inputText: "Give me client talking points", flowKey: "talking-points" },
+        { label: "Draft Client Email", inputText: "Draft a client email", flowKey: "draft-email" },
       ],
     },
   },
@@ -375,9 +444,25 @@ const etpFlows: Record<string, { thinkingDelay: number; thinkingMessage?: string
 const initialEtpMsg: EtpMsg = {
   id: "etp-0",
   role: "assistant",
-  content: "I can help explain the pricing for this engagement. Choose an option below to get started.",
+  title: "Price Explanation",
+  content: "This engagement's **realized margin is 18.3% — below the 24.1% peer average** for Audit & Assurance clients in the $250K–$350K band.\n\nThe gap is driven by two factors: **product complexity** (this is a full-scope audit with SOX 404 testing and multi-entity consolidation, which carries higher delivery cost) and **client size** (smaller clients have less fee leverage but require similar base infrastructure).\n\nThe model recommends a **9.0% increase** to close the margin gap while staying within the client's historical acceptance range. Peers of similar tenure accepted an average **9.7% increase** this cycle.",
   suggestions: [
-    { label: "Get Internal Explanation", inputText: "Get internal explanation", flowKey: "internal-explanation" },
+    { label: "Why 9% and Not Higher?", inputText: "Why 9% and not higher?", flowKey: "why-9-pct" },
+    { label: "Break Down the Margin Gap", inputText: "Break down the margin gap", flowKey: "margin-breakdown" },
+    { label: "Show Peer Comparisons", inputText: "Show peer comparisons", flowKey: "similar-engagements" },
+    { label: "What If We Go Below 9%?", inputText: "What if we go below 9%?", flowKey: "below-9-scenario" },
+    { label: "Give Me Client Talking Points", inputText: "Give me client talking points", flowKey: "talking-points" },
+    { label: "Anticipate Objections", inputText: "Anticipate objections", flowKey: "anticipate-objections" },
+  ],
+};
+
+const productLevelEtpMsg: EtpMsg = {
+  id: "etp-product",
+  role: "assistant",
+  title: "Product-Level Price Explanation",
+  content: "This instance's review definition is set to **engagement-level**. By switching the definition to **product-level**, the model breaks down the recommendation by each product line within the engagement:\n\n**SOX 404 Testing** — Current: $145,000 → Recommended: $158,000 (+9.0%)\n• Margin: 14.2% vs. 21.8% peer avg — most under-priced component\n• Requires 2 senior staff × 4 weeks; peers charge 12–18% more for equivalent scope\n• Key driver: multi-entity consolidation adds ~35% testing effort vs. single-entity\n\n**Core Audit** — Current: $210,000 → Recommended: $229,000 (+9.0%)\n• Margin: 20.1% vs. 25.3% peer avg\n• Standard scope but compressed rate card from original engagement pricing\n• ASC 842 and ESG reporting requirements added without proportional fee adjustment\n\n**IT Audit / Controls** — Current: $64,000 → Recommended: $69,750 (+9.0%)\n• Margin: 22.5% vs. 24.8% peer avg — closest to parity\n• Largely rate-driven gap; scope is appropriately sized\n\nThe model applies a **uniform 9.0% increase** across products rather than differentiated rates to simplify the client conversation. A differentiated approach (12% on SOX, 8% on Core, 6% on IT) would optimize margin faster but adds negotiation complexity.",
+  suggestions: [
+    { label: "Why 9% and Not Higher?", inputText: "Why 9% and not higher?", flowKey: "why-9-pct" },
     { label: "Give Me Client Talking Points", inputText: "Give me client talking points", flowKey: "talking-points" },
     { label: "Anticipate Objections", inputText: "Anticipate objections", flowKey: "anticipate-objections" },
   ],
@@ -524,7 +609,6 @@ export default function PriceReviewPage() {
   const [aiState, setAiState] = useState<"idle" | "thinking">("idle");
   const [aiMessages, setAiMessages] = useState<{ role: "user" | "ai"; text: string }[]>([]);
   const tableData = useMemo(() => generateTableData(), []);
-  const paginatedData = tableData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const [drawerOpenRow, setDrawerOpenRow] = useState<number | null>(null);
   const [activeDrawerTab, setActiveDrawerTab] = useState<"analytics" | "details" | "explain" | "comments" | "decision-support">("explain");
@@ -535,8 +619,24 @@ export default function PriceReviewPage() {
   const etpBottomRef = useRef<HTMLDivElement>(null);
   const etpMsgIdRef = useRef(0);
   const complicationPreloadRef = useRef(false);
+  const kpiScrollRef = useRef<HTMLDivElement>(null);
   const [analyticsPreload, setAnalyticsPreload] = useState<string | undefined>();
   const [activeTourStep, setActiveTourStep] = useState<number | null>(null);
+  const [statusFilterAnchor, setStatusFilterAnchor] = useState<HTMLElement | null>(null);
+  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
+  const [layoutAnchor, setLayoutAnchor] = useState<HTMLElement | null>(null);
+  const [selectedLayout, setSelectedLayout] = useState<string | null>(null);
+  const [createLayoutOpen, setCreateLayoutOpen] = useState(false);
+  const [expandedSubs, setExpandedSubs] = useState<Set<string>>(new Set());
+  const [layoutPartnerFilter, setLayoutPartnerFilter] = useState<string | null>(null);
+  const filteredData = useMemo(() => {
+    let data = tableData;
+    if (statusFilter.size > 0) data = data.filter(r => statusFilter.has(r.status));
+    if (layoutPartnerFilter) data = data.filter(r => r.partnerName === layoutPartnerFilter);
+    return data;
+  }, [tableData, statusFilter, layoutPartnerFilter]);
+  const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const kpiCards = useMemo(() => computeKpis(filteredData), [filteredData]);
 
   const drawerRow = drawerOpenRow !== null ? tableData[drawerOpenRow] : null;
 
@@ -549,9 +649,22 @@ export default function PriceReviewPage() {
       complicationPreloadRef.current = false;
       return;
     }
-    setEtpMessages([initialEtpMsg]);
-    setEtpThinking(false);
+    if (drawerOpenRow === null) {
+      setEtpMessages([initialEtpMsg]);
+      setEtpThinking(false);
+      etpMsgIdRef.current = 0;
+      return;
+    }
+    setEtpMessages([]);
+    setEtpThinking(true);
+    setEtpThinkingMsg("Loading price explanation…");
     etpMsgIdRef.current = 0;
+    const t = setTimeout(() => {
+      setEtpMessages([initialEtpMsg]);
+      setEtpThinking(false);
+      setEtpThinkingMsg(undefined);
+    }, 1500);
+    return () => clearTimeout(t);
   }, [drawerOpenRow]);
 
   useEffect(() => {
@@ -615,7 +728,7 @@ export default function PriceReviewPage() {
   };
 
   const toggleAllOnPage = () => {
-    const pageIndices = paginatedData.map((_, i) => page * rowsPerPage + i);
+    const pageIndices = paginatedData.map((row) => tableData.indexOf(row));
     const allSelected = pageIndices.every((i) => selectedRows.has(i));
     setSelectedRows((prev) => {
       const next = new Set(prev);
@@ -666,7 +779,110 @@ export default function PriceReviewPage() {
               <Box sx={{ color: item.active ? "#00446a" : "rgba(0,0,0,0.54)" }}>{item.icon}</Box>
             </Box>
           ))}
+          <Box sx={{ mt: "auto", mb: 1.5 }}>
+            <Tooltip title="Switch instance" placement="right" arrow>
+              <Box
+                onClick={() => window.dispatchEvent(new CustomEvent("open-instance-modal"))}
+                sx={{ width: 53, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", "&:hover": { bgcolor: "#f8f8f8" } }}
+              >
+                <SwapHorizIcon sx={{ fontSize: 20, color: "rgba(0,0,0,0.45)" }} />
+              </Box>
+            </Tooltip>
+          </Box>
         </Box>
+
+        {/* Data Layout Side Panel */}
+        {selectedLayout === "org-region" && (
+          <Box sx={{ width: 280, flexShrink: 0, bgcolor: "white", borderRight: "1px solid rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <Box sx={{ borderTop: "3px solid #00446a" }} />
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5 }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#00446a" }}>Data Layout View</Typography>
+              <Typography onClick={() => { setSelectedLayout(null); setLayoutPartnerFilter(null); }} sx={{ fontSize: 16, color: "#00446a", cursor: "pointer", fontWeight: 300 }}>&laquo;</Typography>
+            </Box>
+            <Box sx={{ px: 2, pb: 1 }}>
+              <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.5)" }}>
+                <strong style={{ color: "rgba(0,0,0,0.6)" }}>Viewing:</strong> Service Line &gt; Sub-Service &gt; Partner
+              </Typography>
+            </Box>
+            <Box sx={{ px: 2, pb: 1.5 }}>
+              <TextField size="small" fullWidth placeholder="Search Parent Folders" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "6px", fontSize: 11 } }} slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 16, color: "rgba(0,0,0,0.3)" }} /></InputAdornment> } }} />
+            </Box>
+            <Box sx={{ display: "flex", gap: 2, px: 2, mb: 1 }}>
+              <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#00446a", cursor: "pointer" }}>COLLAPSE ALL</Typography>
+              <Typography onClick={() => { setLayoutPartnerFilter(null); setPage(0); }} sx={{ fontSize: 11, fontWeight: 600, color: layoutPartnerFilter ? "#00446a" : "rgba(0,0,0,0.3)", cursor: layoutPartnerFilter ? "pointer" : "default" }}>CLEAR SELECTION</Typography>
+            </Box>
+            <Box sx={{ flex: 1, overflowY: "auto", px: 1 }}>
+              {[
+                { label: "Audit & Assurance", pct: "42.3%", children: [
+                  { name: "Annual Audit", partners: ["J. Whitfield", "M. Richardson", "R. Patel"] },
+                  { name: "SOX Compliance", partners: ["S. Goldstein", "K. Donovan"] },
+                  { name: "Internal Controls", partners: ["J. Whitfield", "A. Bernstein"] },
+                  { name: "Risk Assessment", partners: ["T. Nakamura", "L. Chen"] },
+                ]},
+                { label: "Tax", pct: "28.1%", children: [
+                  { name: "Federal Planning", partners: ["R. Patel", "S. Goldstein"] },
+                  { name: "State & Local", partners: ["K. Donovan", "M. Richardson"] },
+                  { name: "International", partners: ["T. Nakamura"] },
+                  { name: "Transfer Pricing", partners: ["A. Bernstein"] },
+                ]},
+                { label: "Advisory", pct: "18.7%", children: [
+                  { name: "M&A Due Diligence", partners: ["L. Chen", "J. Whitfield"] },
+                  { name: "Restructuring", partners: ["K. Donovan"] },
+                  { name: "Valuation Services", partners: ["S. Goldstein", "T. Nakamura"] },
+                ]},
+                { label: "Accounting", pct: "8.2%", children: [
+                  { name: "Outsourced CFO", partners: ["M. Richardson"] },
+                  { name: "Bookkeeping", partners: ["R. Patel", "A. Bernstein"] },
+                  { name: "Payroll", partners: ["L. Chen"] },
+                ]},
+                { label: "Consulting", pct: "2.7%", children: [
+                  { name: "Strategy", partners: ["T. Nakamura"] },
+                  { name: "Technology", partners: ["K. Donovan", "S. Goldstein"] },
+                  { name: "Operations", partners: ["J. Whitfield"] },
+                ]},
+              ].map((folder) => (
+                <Box key={folder.label}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1, py: 1, cursor: "pointer", borderRadius: "4px", "&:hover": { bgcolor: "rgba(0,0,0,0.03)" } }}>
+                    <ExpandMoreIcon sx={{ fontSize: 16, color: "rgba(0,0,0,0.4)" }} />
+                    <FolderIcon sx={{ fontSize: 16, color: "rgba(0,0,0,0.25)" }} />
+                    <Typography sx={{ fontSize: 12, color: "#333", fontWeight: 500, flex: 1 }}>{folder.label}</Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "rgba(0,0,0,0.2)" }} />
+                      <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{folder.pct}</Typography>
+                    </Box>
+                  </Box>
+                  {folder.children.map((child) => {
+                    const subKey = `${folder.label}::${child.name}`;
+                    const isOpen = expandedSubs.has(subKey);
+                    return (
+                      <Box key={child.name}>
+                        <Box
+                          onClick={() => setExpandedSubs(prev => { const next = new Set(prev); next.has(subKey) ? next.delete(subKey) : next.add(subKey); return next; })}
+                          sx={{ display: "flex", alignItems: "center", gap: 1, pl: 4.5, pr: 1, py: 0.75, cursor: "pointer", borderRadius: "4px", "&:hover": { bgcolor: "rgba(0,0,0,0.03)" } }}
+                        >
+                          <ChevronRightIcon sx={{ fontSize: 14, color: "rgba(0,0,0,0.3)", transition: "transform 0.2s", transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }} />
+                          <DescriptionIcon sx={{ fontSize: 14, color: "rgba(0,0,0,0.2)" }} />
+                          <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.6)", flex: 1 }}>{child.name}</Typography>
+                          <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: "rgba(0,0,0,0.15)" }} />
+                        </Box>
+                        {isOpen && child.partners.map((partner) => (
+                          <Box
+                            key={partner}
+                            onClick={() => { setLayoutPartnerFilter(prev => prev === partner ? null : partner); setPage(0); }}
+                            sx={{ display: "flex", alignItems: "center", gap: 1, pl: 8, pr: 1, py: 0.5, cursor: "pointer", borderRadius: "4px", bgcolor: layoutPartnerFilter === partner ? "rgba(0,68,106,0.08)" : "transparent", "&:hover": { bgcolor: layoutPartnerFilter === partner ? "rgba(0,68,106,0.12)" : "rgba(0,0,0,0.03)" } }}
+                          >
+                            <PersonIcon sx={{ fontSize: 13, color: layoutPartnerFilter === partner ? "#00446a" : "rgba(0,0,0,0.2)" }} />
+                            <Typography sx={{ fontSize: 10.5, color: layoutPartnerFilter === partner ? "#00446a" : "rgba(0,0,0,0.5)", fontWeight: layoutPartnerFilter === partner ? 600 : 400 }}>{partner}</Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    );
+                  })}
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        )}
 
         {/* Main content */}
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", bgcolor: "#f8f8f8", position: "relative" }}>
@@ -678,18 +894,18 @@ export default function PriceReviewPage() {
 
           {/* KPI Cards */}
           <Box data-tour="kpi-cards" sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 3, py: 2 }}>
-            <IconButton sx={{ width: 27, height: 63, borderRadius: "6px", bgcolor: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.12)", flexShrink: 0, "&:hover": { bgcolor: "rgba(0,0,0,0.08)" } }}>
+            <IconButton onClick={() => kpiScrollRef.current?.scrollBy({ left: -430, behavior: "smooth" })} sx={{ width: 27, height: 63, borderRadius: "6px", bgcolor: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.12)", flexShrink: 0, "&:hover": { bgcolor: "rgba(0,0,0,0.08)" } }}>
               <ChevronLeftIcon sx={{ fontSize: 16, color: "#00446a" }} />
             </IconButton>
-            <Box sx={{ display: "flex", gap: 1.5, flex: 1, overflow: "hidden" }}>
+            <Box ref={kpiScrollRef} sx={{ display: "flex", gap: 1.5, flex: 1, overflow: "hidden", scrollBehavior: "smooth" }}>
               {kpiCards.map((card) => (
-                <Paper key={card.title} elevation={0} sx={{ bgcolor: "white", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", px: 2, py: 1.25, minWidth: 200 }}>
+                <Paper key={card.title} elevation={0} sx={{ bgcolor: "white", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", px: 2, py: 1.25, minWidth: 200, flexShrink: 0 }}>
                   <Typography sx={{ fontSize: 12, fontWeight: 400, letterSpacing: "1px", textTransform: "uppercase", lineHeight: "32px" }}>{card.title}</Typography>
                   <Typography sx={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.15px", lineHeight: "24px" }}>{card.value}</Typography>
                 </Paper>
               ))}
             </Box>
-            <IconButton sx={{ width: 27, height: 63, borderRadius: "6px", bgcolor: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.12)", flexShrink: 0, "&:hover": { bgcolor: "rgba(0,0,0,0.08)" } }}>
+            <IconButton onClick={() => kpiScrollRef.current?.scrollBy({ left: 430, behavior: "smooth" })} sx={{ width: 27, height: 63, borderRadius: "6px", bgcolor: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.12)", flexShrink: 0, "&:hover": { bgcolor: "rgba(0,0,0,0.08)" } }}>
               <ChevronRightIcon sx={{ fontSize: 16, color: "#00446a" }} />
             </IconButton>
           </Box>
@@ -702,13 +918,19 @@ export default function PriceReviewPage() {
               </IconButton>
             ))}
             <Divider orientation="vertical" flexItem sx={{ mx: 1, borderColor: "rgba(0,0,0,0.3)" }} />
-            {["Toggle Filters", "Manage Columns", "Data Layouts"].map((label) => (
+            {["Toggle Filters", "Manage Columns"].map((label) => (
               <Button key={label} variant="outlined" size="small" sx={{ height: 30, px: 1.5, borderColor: "rgba(0,0,0,0.12)", borderRadius: "6px", color: "rgba(0,0,0,0.6)", fontSize: 10, fontWeight: 500, textTransform: "none", minWidth: 0, "&:hover": { bgcolor: "rgba(0,0,0,0.04)", borderColor: "rgba(0,0,0,0.24)" } }}>
                 {label}
               </Button>
             ))}
+            <Button variant="outlined" size="small" onClick={(e) => setLayoutAnchor(e.currentTarget)} sx={{ height: 30, px: 1.5, borderColor: layoutAnchor ? "#00446a" : "rgba(0,0,0,0.12)", borderRadius: "6px", color: layoutAnchor ? "#00446a" : "rgba(0,0,0,0.6)", fontSize: 10, fontWeight: 500, textTransform: "none", minWidth: 0, bgcolor: layoutAnchor ? "rgba(0,68,106,0.04)" : undefined, "&:hover": { bgcolor: "rgba(0,0,0,0.04)", borderColor: "rgba(0,0,0,0.24)" } }}>
+              Data Layouts
+            </Button>
             <Button variant="outlined" size="small" disabled={selectedRows.size === 0} sx={{ height: 30, px: 1.5, borderColor: selectedRows.size > 0 ? "rgba(0,0,0,0.24)" : "rgba(0,0,0,0.08)", borderRadius: "6px", fontSize: 10, fontWeight: 500, textTransform: "none", minWidth: 0, color: selectedRows.size > 0 ? "rgba(0,0,0,0.7)" : undefined }}>
               Create Mass Action to {selectedRows.size} Items
+            </Button>
+            <Button variant="outlined" size="small" sx={{ height: 30, px: 1.5, borderColor: "rgba(0,0,0,0.12)", borderRadius: "6px", color: "rgba(0,0,0,0.6)", fontSize: 10, fontWeight: 500, textTransform: "none", minWidth: 0, "&:hover": { bgcolor: "rgba(0,0,0,0.04)", borderColor: "rgba(0,0,0,0.24)" } }}>
+              Mark as Complete
             </Button>
             {selectedRows.size > 0 && (
               <Button
@@ -760,25 +982,32 @@ export default function PriceReviewPage() {
                     <Checkbox
                       size="small"
                       sx={{ p: 0 }}
-                      checked={paginatedData.length > 0 && paginatedData.every((_, i) => selectedRows.has(page * rowsPerPage + i))}
-                      indeterminate={paginatedData.some((_, i) => selectedRows.has(page * rowsPerPage + i)) && !paginatedData.every((_, i) => selectedRows.has(page * rowsPerPage + i))}
+                      checked={paginatedData.length > 0 && paginatedData.every((row) => selectedRows.has(tableData.indexOf(row)))}
+                      indeterminate={paginatedData.some((row) => selectedRows.has(tableData.indexOf(row))) && !paginatedData.every((row) => selectedRows.has(tableData.indexOf(row)))}
                       onChange={toggleAllOnPage}
                     />
                   </TableCell>
                   <TableCell sx={{ ...headerCellSx, bgcolor: "#fafafa", width: 38, minWidth: 38 }} />
                   {columns.map((col) => (
-                    <TableCell key={col.key} align={col.align || "left"} sx={{ ...headerCellSx, bgcolor: "#fafafa", width: col.width, minWidth: col.width }}>
-                      {col.label}
+                    <TableCell key={col.key} align={col.align || "left"} sx={{ ...headerCellSx, bgcolor: "#fafafa", width: col.width, minWidth: col.width, ...(col.label.includes("\n") && { whiteSpace: "pre-line", lineHeight: 1.3 }) }}>
+                      {col.key === "status" ? (
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <span>{col.label}</span>
+                          <IconButton size="small" onClick={(e) => setStatusFilterAnchor(e.currentTarget)} sx={{ ml: 0.5, p: 0.25, color: statusFilter.size > 0 ? "#00446a" : "rgba(0,0,0,0.3)" }}>
+                            <MoreVertIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Box>
+                      ) : col.label}
                     </TableCell>
                   ))}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {paginatedData.map((row, idx) => {
-                  const globalIdx = page * rowsPerPage + idx;
+                  const globalIdx = tableData.indexOf(row);
                   const isSelected = selectedRows.has(globalIdx);
                   return (
-                  <TableRow key={idx} hover sx={{ bgcolor: isSelected ? "rgba(0,68,106,0.08)" : idx % 2 === 0 ? "#fff" : "#fafafa" }}>
+                  <TableRow key={idx} hover sx={{ bgcolor: drawerOpenRow === globalIdx ? "rgba(0,68,106,0.12)" : isSelected ? "rgba(0,68,106,0.08)" : idx % 2 === 0 ? "#fff" : "#fafafa", boxShadow: drawerOpenRow === globalIdx ? "inset 3px 0 0 #00446a" : "none", transition: "background-color 0.2s ease" }}>
                     <TableCell padding="checkbox" sx={{ ...bodyCellSx, width: 42, minWidth: 42 }}>
                       <Checkbox size="small" sx={{ p: 0, color: isSelected ? "#00446a" : undefined, "&.Mui-checked": { color: "#00446a" } }} checked={isSelected} onChange={() => toggleRow(globalIdx)} />
                     </TableCell>
@@ -799,7 +1028,7 @@ export default function PriceReviewPage() {
 
           <TablePagination
             component="div"
-            count={tableData.length}
+            count={filteredData.length}
             page={page}
             onPageChange={(_, p) => setPage(p)}
             rowsPerPage={rowsPerPage}
@@ -807,6 +1036,41 @@ export default function PriceReviewPage() {
             rowsPerPageOptions={[25, 50, 100]}
             sx={{ mx: 3, mb: 1, bgcolor: "white", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
           />
+
+          <Popover
+            open={Boolean(statusFilterAnchor)}
+            anchorEl={statusFilterAnchor}
+            onClose={() => setStatusFilterAnchor(null)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+            transformOrigin={{ vertical: "top", horizontal: "left" }}
+            slotProps={{ paper: { sx: { borderRadius: "8px", minWidth: 180, py: 0.5 } } }}
+          >
+            <Box sx={{ px: 2, py: 1, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+              <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#00446a" }}>Filter by Status</Typography>
+            </Box>
+            {["Needs Review", "Complete", "Revised"].map((s) => (
+              <Box
+                key={s}
+                onClick={() => {
+                  const next = new Set(statusFilter);
+                  if (next.has(s)) next.delete(s); else next.add(s);
+                  setStatusFilter(next);
+                  setPage(0);
+                }}
+                sx={{ display: "flex", alignItems: "center", gap: 1, px: 2, py: 0.75, cursor: "pointer", "&:hover": { bgcolor: "rgba(0,0,0,0.04)" } }}
+              >
+                <Checkbox size="small" checked={statusFilter.has(s)} sx={{ p: 0, color: "#00446a", "&.Mui-checked": { color: "#00446a" } }} />
+                <Box sx={{ display: "inline-flex", alignItems: "center", px: 1, py: 0.25, borderRadius: "4px", bgcolor: (statusColors[s] || { bg: "#f5f5f5" }).bg }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 500, color: (statusColors[s] || { color: "#333" }).color }}>{s}</Typography>
+                </Box>
+              </Box>
+            ))}
+            {statusFilter.size > 0 && (
+              <Box sx={{ px: 2, py: 1, borderTop: "1px solid rgba(0,0,0,0.08)" }}>
+                <Typography onClick={() => { setStatusFilter(new Set()); setPage(0); }} sx={{ fontSize: 11, color: "#00446a", cursor: "pointer", fontWeight: 500, "&:hover": { textDecoration: "underline" } }}>Clear filter</Typography>
+              </Box>
+            )}
+          </Popover>
 
           {/* AI Assistant Panel */}
           {aiOpen && (
@@ -939,23 +1203,6 @@ export default function PriceReviewPage() {
             </Paper>
           )}
         </Box>
-
-        {/* Dark overlay when drawer is open */}
-        {drawerOpenRow !== null && (
-          <Box
-            onClick={() => setDrawerOpenRow(null)}
-            sx={{
-              position: "fixed",
-              top: 48,
-              left: 0,
-              width: "calc(100% - 464px)",
-              bottom: 0,
-              bgcolor: "rgba(0,0,0,0.5)",
-              zIndex: 10,
-              cursor: "pointer",
-            }}
-          />
-        )}
 
         {/* Right-side Decision Support Drawer */}
         {drawerOpenRow !== null && drawerRow && (
@@ -1163,6 +1410,21 @@ export default function PriceReviewPage() {
                                 <Chip key={s.label} label={s.label} size="small" clickable onClick={() => handleEtpChip(s)} sx={{ fontSize: 11, height: 28, borderRadius: "14px", bgcolor: "rgba(0,68,106,0.06)", border: "1px solid rgba(0,68,106,0.2)", color: "#00446a", fontWeight: 500, "&:hover": { bgcolor: "rgba(0,68,106,0.12)" } }} />
                               ))}
                             </Box>
+                            <Typography
+                              onClick={() => {
+                                setEtpMessages([]);
+                                setEtpThinking(true);
+                                setEtpThinkingMsg("Loading product-level explanation…");
+                                setTimeout(() => {
+                                  setEtpMessages([productLevelEtpMsg]);
+                                  setEtpThinking(false);
+                                  setEtpThinkingMsg(undefined);
+                                }, 1500);
+                              }}
+                              sx={{ fontSize: 11, color: "rgba(0,0,0,0.35)", mt: 1, cursor: "pointer", "&:hover": { color: "#00446a", textDecoration: "underline" }, transition: "color 0.15s" }}
+                            >
+                              View example at the product level →
+                            </Typography>
                           </Box>
                         );
                       })()}
@@ -1189,6 +1451,126 @@ export default function PriceReviewPage() {
           </Box>
         )}
       </Box>
+      {/* Data Layouts Popover */}
+      <Popover
+        open={Boolean(layoutAnchor)}
+        anchorEl={layoutAnchor}
+        onClose={() => setLayoutAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{ paper: { sx: { width: 360, borderRadius: "8px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", mt: 0.5 } } }}
+      >
+        <Box sx={{ p: 2 }}>
+          <Box sx={{ display: "flex", borderBottom: "2px solid transparent", mb: 1.5 }}>
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#00446a", textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "2px solid #00446a", pb: 0.75, mr: 3 }}>Data Layouts</Typography>
+            <Typography sx={{ fontSize: 12, fontWeight: 500, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", letterSpacing: "0.05em", pb: 0.75, cursor: "pointer", "&:hover": { color: "rgba(0,0,0,0.6)" } }}>Table Layouts</Typography>
+          </Box>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="Search for Data Layouts"
+            sx={{ mb: 1.5, "& .MuiOutlinedInput-root": { borderRadius: "6px", fontSize: 12 } }}
+            slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 16, color: "rgba(0,0,0,0.3)" }} /></InputAdornment> } }}
+          />
+        </Box>
+        <Box sx={{ maxHeight: 320, overflowY: "auto" }}>
+          {[
+            { id: "org-region", name: "Service Line Overview", creator: "Admin", desc: "Review completion by service line and partner", isDefault: true },
+            { id: "default", name: "Default Layout", creator: "System Default", desc: "All items in a single flat list" },
+            { id: "custom-1", name: "Service Line View", creator: "Cathryn Greene", desc: "Track engagement progress per client" },
+            { id: "org-product", name: "Org + Product", creator: "Jeremy Heit", desc: "See each partner's book of business" },
+            { id: "region-view", name: "Region View", creator: "Admin", desc: "Compare review status across regions" },
+          ].map((layout) => (
+            <Box
+              key={layout.id}
+              onClick={() => { setSelectedLayout(layout.id); setLayoutAnchor(null); }}
+              sx={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 1.5,
+                px: 2,
+                py: 1.5,
+                cursor: "pointer",
+                bgcolor: selectedLayout === layout.id ? "rgba(0,68,106,0.06)" : "transparent",
+                border: selectedLayout === layout.id ? "1.5px solid rgba(0,68,106,0.3)" : "1.5px solid transparent",
+                borderLeft: "none",
+                borderRight: "none",
+                "&:hover": { bgcolor: selectedLayout === layout.id ? "rgba(0,68,106,0.08)" : "rgba(0,0,0,0.02)" },
+              }}
+            >
+              <Radio checked={selectedLayout === layout.id} size="small" sx={{ p: 0, mt: 0.25, color: "rgba(0,0,0,0.3)", "&.Mui-checked": { color: "#00446a" } }} />
+              <Box sx={{ flex: 1 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#333" }}>{layout.name}</Typography>
+                <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>Created By: {layout.creator}</Typography>
+                {layout.desc && <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>{layout.desc}</Typography>}
+                {layout.isDefault && (
+                  <Box sx={{ display: "inline-block", mt: 0.5, px: 1, py: 0.25, borderRadius: "4px", bgcolor: "#00446a" }}>
+                    <Typography sx={{ fontSize: 10, fontWeight: 600, color: "white" }}>Admin Default</Typography>
+                  </Box>
+                )}
+              </Box>
+              <IconButton size="small" sx={{ mt: 0.25, color: "rgba(0,0,0,0.3)" }}><MoreVertIcon sx={{ fontSize: 18 }} /></IconButton>
+            </Box>
+          ))}
+        </Box>
+        <Box sx={{ display: "flex", borderTop: "1px solid rgba(0,0,0,0.1)", px: 2, py: 1.5 }}>
+          <Button size="small" startIcon={<AddIcon sx={{ fontSize: 16 }} />} onClick={() => { setLayoutAnchor(null); setCreateLayoutOpen(true); }} sx={{ fontSize: 11, fontWeight: 600, color: "#00446a", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+            Create New
+          </Button>
+          <Button size="small" startIcon={<RefreshIcon sx={{ fontSize: 16 }} />} sx={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.45)", textTransform: "uppercase", letterSpacing: "0.03em", ml: "auto" }}>
+            Reset to Default
+          </Button>
+        </Box>
+      </Popover>
+
+      {/* Create New Data Layout Dialog */}
+      <Dialog open={createLayoutOpen} onClose={() => setCreateLayoutOpen(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: "12px" } } }}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 1 }}>
+          <Typography sx={{ fontSize: 20, fontWeight: 400, color: "#333" }}>Create New Data Layout</Typography>
+          <IconButton onClick={() => setCreateLayoutOpen(false)} size="small"><CloseIcon sx={{ fontSize: 20 }} /></IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", gap: 3, mt: 1 }}>
+            {/* Left: Define Layout */}
+            <Box sx={{ flex: 1, border: "1px solid rgba(0,0,0,0.1)", borderRadius: "8px", p: 2.5 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#00446a", mb: 2 }}>Define Layout</Typography>
+              <TextField fullWidth size="small" label="Layout Name *" sx={{ mb: 2, "& .MuiOutlinedInput-root": { borderRadius: "6px", fontSize: 13 } }} />
+              <TextField fullWidth size="small" label="Layout Description *" slotProps={{ htmlInput: { maxLength: 30 } }} helperText="0/30" sx={{ mb: 2.5, "& .MuiOutlinedInput-root": { borderRadius: "6px", fontSize: 13 } }} />
+              <FormControlLabel control={<Switch size="small" />} label={<Box><Typography sx={{ fontSize: 13 }}>Make this your default data layout</Typography><Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>If you choose to make this your default data layout, this layout will be applied automatically when you load this page.</Typography></Box>} sx={{ alignItems: "flex-start", mb: 2 }} />
+              <FormControlLabel control={<Switch size="small" />} label={<Box><Typography sx={{ fontSize: 13 }}>Make this a shared data layout</Typography><Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>If you choose to share this layout, anyone can access this layout for use. Deleting this layout will delete it for all users.</Typography></Box>} sx={{ alignItems: "flex-start" }} />
+            </Box>
+            {/* Right: Configure Layout */}
+            <Box sx={{ flex: 1, border: "1px solid rgba(0,0,0,0.1)", borderRadius: "8px", p: 2.5 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#00446a", mb: 2 }}>Configure Layout</Typography>
+              {[1, 2, 3].map((n) => (
+                <Box key={n} sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ width: 1, borderLeft: "2px dotted rgba(0,0,0,0.2)", height: n > 1 ? 32 : 0 }} />
+                    <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,0.6)", minWidth: 120 }}>{n}. {n === 1 ? "Assign First" : "Add A Nested"} Condition</Typography>
+                  </Box>
+                  <Select size="small" displayEmpty fullWidth sx={{ fontSize: 12, borderRadius: "6px" }} value="">
+                    <MenuItem value="" disabled><em>Select Attribute *</em></MenuItem>
+                    <MenuItem value="region">Organization Region</MenuItem>
+                    <MenuItem value="service">Service Line</MenuItem>
+                    <MenuItem value="partner">Partner Name</MenuItem>
+                    <MenuItem value="status">Status</MenuItem>
+                    <MenuItem value="client">Client Name</MenuItem>
+                  </Select>
+                  <IconButton size="small" sx={{ color: "#00446a" }}><CloseIcon sx={{ fontSize: 16 }} /></IconButton>
+                </Box>
+              ))}
+              <Button size="small" startIcon={<AddIcon sx={{ fontSize: 16 }} />} sx={{ fontSize: 11, fontWeight: 600, color: "#00446a", textTransform: "uppercase" }}>
+                Add Additional Nested Condition
+              </Button>
+            </Box>
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+            <Button variant="contained" sx={{ bgcolor: "#00446a", fontWeight: 600, fontSize: 12, textTransform: "uppercase", borderRadius: "6px", px: 3, "&:hover": { bgcolor: "#003354" } }}>
+              Save &amp; Apply Layout
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

@@ -6,40 +6,42 @@ const G = "#2e7d32";
 
 /* ── 1. The Problem ── */
 function VisualProblem() {
-  const market = "M40 110 C80 85,130 60,170 68 S230 100,260 78 S310 48,350 55 S400 72,420 58";
-  const staticY = 88;
-  const gapFill = `M40 ${staticY} C80 85,130 60,170 68 S230 100,260 78 S310 48,350 55 S400 72,420 58 L420 ${staticY} Z`;
+  const market = "M55 130 C95 95,140 55,180 65 S240 110,270 82 S320 30,360 40 S410 62,430 50";
+  const staticY = 100;
+  const gapFill = `M55 ${staticY} C95 95,140 55,180 65 S240 110,270 82 S320 30,360 40 S410 62,430 50 L430 ${staticY} Z`;
   return (
-    <svg viewBox="0 0 460 210">
-      {/* Axes */}
-      <line x1="30" y1="180" x2="440" y2="180" stroke="#e0e0e0" strokeWidth="1" />
-      <line x1="30" y1="20" x2="30" y2="180" stroke="#e0e0e0" strokeWidth="1" />
-      <text x="235" y="200" fontSize="11" fill="rgba(0,0,0,0.35)" textAnchor="middle">Time</text>
+    <svg viewBox="0 0 470 195">
+      {/* Y-axis */}
+      <line x1="50" y1="10" x2="50" y2="160" stroke="#e0e0e0" strokeWidth="1" />
+      <text x="15" y="90" fontSize="10" fill="rgba(0,0,0,0.4)" textAnchor="middle" fontWeight="500" transform="rotate(-90,15,90)">Price</text>
+      {/* X-axis */}
+      <line x1="50" y1="160" x2="445" y2="160" stroke="#e0e0e0" strokeWidth="1" />
+      <text x="248" y="175" fontSize="10" fill="rgba(0,0,0,0.4)" textAnchor="middle" fontWeight="500">Time</text>
 
       {/* Gap fill — the hero */}
-      <path d={gapFill} fill="#c62828" opacity="0.12" />
+      <path d={gapFill} fill="#c62828" opacity="0.1" />
 
-      {/* Market line — prominent */}
+      {/* Market line */}
       <path d={market} fill="none" stroke={P} strokeWidth="3" />
-      {[[40,110],[100,72],[170,68],[230,90],[260,78],[310,48],[350,55],[400,66],[420,58]].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="3.5" fill={P} />
+      {[[55,130],[120,72],[180,65],[240,100],[270,82],[320,30],[360,40],[410,56],[430,50]].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="4" fill={P} />
       ))}
 
       {/* Static price line */}
-      <line x1="40" y1={staticY} x2="420" y2={staticY} stroke="#c62828" strokeWidth="2.5" strokeDasharray="8 4" />
+      <line x1="55" y1={staticY} x2="430" y2={staticY} stroke="#c62828" strokeWidth="3" strokeDasharray="8 5" />
 
-      {/* Gap annotation */}
-      <line x1="350" y1="55" x2="350" y2={staticY} stroke="#c62828" strokeWidth="1.5" />
-      <line x1="344" y1="55" x2="356" y2="55" stroke="#c62828" strokeWidth="1.5" />
-      <line x1="344" y1={staticY} x2="356" y2={staticY} stroke="#c62828" strokeWidth="1.5" />
-      <text x="370" y="74" fontSize="10" fill="#c62828" fontWeight="600">Lost</text>
-      <text x="370" y="86" fontSize="10" fill="#c62828" fontWeight="600">value</text>
+      {/* Gap callout */}
+      <line x1="360" y1="40" x2="360" y2={staticY} stroke="#c62828" strokeWidth="1.5" />
+      <line x1="354" y1="40" x2="366" y2="40" stroke="#c62828" strokeWidth="1.5" />
+      <line x1="354" y1={staticY} x2="366" y2={staticY} stroke="#c62828" strokeWidth="1.5" />
+      <text x="382" y="65" fontSize="11" fill="#c62828" fontWeight="600">Lost</text>
+      <text x="382" y="78" fontSize="11" fill="#c62828" fontWeight="600">value</text>
 
-      {/* Legend */}
-      <line x1="295" y1="160" x2="315" y2="160" stroke={P} strokeWidth="3" />
-      <text x="320" y="164" fontSize="10" fill="rgba(0,0,0,0.55)">Market price</text>
-      <line x1="295" y1="175" x2="315" y2="175" stroke="#c62828" strokeWidth="2.5" strokeDasharray="5 3" />
-      <text x="320" y="179" fontSize="10" fill="rgba(0,0,0,0.55)">Your static price</text>
+      {/* Legend — compact, inline */}
+      <line x1="130" y1="188" x2="150" y2="188" stroke={P} strokeWidth="3" />
+      <text x="155" y="192" fontSize="9" fill="rgba(0,0,0,0.5)">Market price</text>
+      <line x1="260" y1="188" x2="280" y2="188" stroke="#c62828" strokeWidth="2.5" strokeDasharray="5 3" />
+      <text x="285" y="192" fontSize="9" fill="rgba(0,0,0,0.5)">Your static price</text>
     </svg>
   );
 }

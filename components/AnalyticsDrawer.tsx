@@ -25,10 +25,12 @@ import {
   PieChart,
   Pie,
   Cell,
+  ReferenceLine,
+  ReferenceArea,
 } from "recharts";
 import type { RowData } from "../app/data";
 
-type ChartKind = "impact-by-service" | "increase-distribution" | "review-status" | "partner-portfolio" | "renewal-risk";
+type ChartKind = "impact-by-service" | "increase-distribution" | "review-status" | "partner-portfolio" | "renewal-risk" | "peer-increase-comparison" | "peer-increase-scenario";
 
 interface ChartConfig {
   type: ChartKind;
@@ -46,6 +48,7 @@ interface Suggestion {
   label: string;
   inputText: string;
   flowKey: string;
+  disabled?: boolean;
 }
 
 interface AnalyticsMsg {
@@ -103,7 +106,7 @@ function buildChartData(data: RowData[]) {
     count: data.filter(r => r.revisedPriceIncreasePct >= b.min && r.revisedPriceIncreasePct < b.max).length,
   }));
 
-  const statusOrder = ["Needs Review", "In Progress", "Approved", "Submitted"];
+  const statusOrder = ["Needs Review", "Complete", "Revised"];
   const statusCounts = groupCount(data, r => r.status);
   const reviewStatus = statusOrder.map(s => ({
     status: s,
@@ -132,7 +135,7 @@ function buildMetrics(data: RowData[]) {
   const needsReview = data.filter(r => r.status === "Needs Review").length;
   const atRisk = data.filter(r => r.clientRenewalStatus === "At Risk").length;
   const totalRevised = data.reduce((s, r) => s + r.revisedTotalFee, 0);
-  const approved = data.filter(r => r.status === "Approved" || r.status === "Submitted").length;
+  const approved = data.filter(r => r.status === "Complete" || r.status === "Revised").length;
   const topPartnerEntries = groupSum(data, r => r.partnerName, r => r.revisedTotalFee);
   const topPartner = topPartnerEntries[0];
   const acceptedComms = data.filter(r => r.clientCommStatus === "Accepted").length;
@@ -266,6 +269,81 @@ function RenewalRiskChart({ data, height = 200 }: { data: Record<string, unknown
   );
 }
 
+function PeerIncreaseChart({ data, height = 260 }: { data: Record<string, unknown>[]; height?: number }) {
+  const peerAvg = data.filter(d => !d.isTarget).reduce((s, d) => s + (d.increase as number), 0) / data.filter(d => !d.isTarget).length;
+  return (
+    <Box sx={{ width: "100%", mb: 1 }}>
+      <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#00446a", mb: 0.5 }}>
+        Recommended Price Increase % — Audit & Assurance Peers ($200K–$400K)
+      </Typography>
+      <ResponsiveContainer width="100%" height={height}>
+        <BarChart data={data} layout="vertical" margin={{ top: 15, right: 50, left: 10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.4} />
+          <XAxis type="number" domain={[0, 15]} ticks={[0, 3, 6, 9, 12, 15]} tickFormatter={(v) => `${v}%`} fontSize={10} />
+          <YAxis type="category" dataKey="name" width={120} fontSize={10} tick={{ fill: "#374151", fontWeight: 500 }} />
+          <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 11 }} />
+          <ReferenceLine x={peerAvg} stroke="#64748b" strokeDasharray="6 3" strokeWidth={1.5} label={{ value: `Peer Avg ${peerAvg.toFixed(1)}%`, position: "top", fontSize: 10, fill: "#64748b", fontWeight: 600 }} />
+          <Bar dataKey="increase" radius={[0, 4, 4, 0]} barSize={20} label={{ position: "right", fontSize: 10, fontWeight: 600, fill: "#374151", formatter: (v: unknown) => `${Number(v).toFixed(1)}%` }}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.isTarget ? "#D97C14" : "#00446a"} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+      <Box sx={{ display: "flex", gap: 2, mt: 0.5, ml: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Box sx={{ width: 10, height: 10, borderRadius: "2px", bgcolor: "#D97C14" }} />
+          <Typography sx={{ fontSize: 9, color: "#666" }}>Meridian (this engagement)</Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Box sx={{ width: 10, height: 10, borderRadius: "2px", bgcolor: "#00446a" }} />
+          <Typography sx={{ fontSize: 9, color: "#666" }}>Peer engagements</Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+function PeerIncreaseScenarioChart({ data, height = 260 }: { data: Record<string, unknown>[]; height?: number }) {
+  return (
+    <Box sx={{ width: "100%", mb: 1 }}>
+      <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#00446a", mb: 0.5 }}>
+        Scenario Analysis — Where Does 9% Sit?
+      </Typography>
+      <ResponsiveContainer width="100%" height={height}>
+        <BarChart data={data} layout="vertical" margin={{ top: 15, right: 50, left: 10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.4} />
+          <XAxis type="number" domain={[0, 15]} ticks={[0, 3, 6, 9, 12, 15]} tickFormatter={(v) => `${v}%`} fontSize={10} />
+          <YAxis type="category" dataKey="name" width={120} fontSize={10} tick={{ fill: "#374151", fontWeight: 500 }} />
+          <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 11 }} />
+          <ReferenceArea x1={0} x2={7} fill="#c62828" fillOpacity={0.05} />
+          <ReferenceLine x={7} stroke="#e65100" strokeDasharray="5 3" strokeWidth={1.5} />
+          <ReferenceLine x={9} stroke="#2e7d32" strokeWidth={2} />
+          <Bar dataKey="increase" radius={[0, 4, 4, 0]} barSize={20}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.isTarget ? "#D97C14" : "#00446a"} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+      <Box sx={{ display: "flex", gap: 1.5, mt: 0.5, ml: 1, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Box sx={{ width: 14, height: 2, bgcolor: "#2e7d32" }} />
+          <Typography sx={{ fontSize: 9, color: "#2e7d32", fontWeight: 600 }}>9% recommended</Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Box sx={{ width: 14, height: 0, borderTop: "2px dashed #e65100" }} />
+          <Typography sx={{ fontSize: 9, color: "#e65100", fontWeight: 600 }}>7% client comfort zone</Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Box sx={{ width: 10, height: 10, bgcolor: "#c62828", opacity: 0.15, borderRadius: "2px" }} />
+          <Typography sx={{ fontSize: 9, color: "#c62828" }}>Margin trap zone (&lt;7%)</Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
 function ChartRenderer({ chart }: { chart: ChartConfig }) {
   const h = chart.height ?? 200;
   switch (chart.type) {
@@ -274,6 +352,8 @@ function ChartRenderer({ chart }: { chart: ChartConfig }) {
     case "review-status": return <ReviewStatusChart data={chart.data} height={h} />;
     case "partner-portfolio": return <PartnerPortfolioChart data={chart.data} height={h} />;
     case "renewal-risk": return <RenewalRiskChart data={chart.data} height={h} />;
+    case "peer-increase-comparison": return <PeerIncreaseChart data={chart.data} height={h} />;
+    case "peer-increase-scenario": return <PeerIncreaseScenarioChart data={chart.data} height={h} />;
     default: return null;
   }
 }
@@ -285,11 +365,11 @@ function renderBold(text: string): React.ReactNode[] {
 // ─── Flow builder (uses real data) ──────────────────────────
 
 const TOPICS: { key: ChartKind; label: string; inputText: string; flowKey: string }[] = [
-  { key: "impact-by-service", label: "Impact by Service Line", inputText: "Show impact by service line", flowKey: "impact-by-service" },
-  { key: "increase-distribution", label: "Price Increase Spread", inputText: "Show price increase distribution", flowKey: "increase-distribution" },
-  { key: "review-status", label: "Review Status", inputText: "Show review status breakdown", flowKey: "review-status" },
-  { key: "partner-portfolio", label: "Partner Portfolio", inputText: "Show partner portfolio", flowKey: "partner-portfolio" },
-  { key: "renewal-risk", label: "Renewal Risk", inputText: "Show renewal risk exposure", flowKey: "renewal-risk" },
+  { key: "impact-by-service", label: "Where does this engagement sit vs. others in its service line?", inputText: "Where does this engagement sit vs. others in its service line?", flowKey: "impact-by-service" },
+  { key: "increase-distribution", label: "How does this price increase compare to the rest of the portfolio?", inputText: "How does this price increase compare to the rest of the portfolio?", flowKey: "increase-distribution" },
+  { key: "review-status", label: "How far along is the review cycle overall?", inputText: "How far along is the review cycle overall?", flowKey: "review-status" },
+  { key: "partner-portfolio", label: "How does this partner's book compare to others?", inputText: "How does this partner's book compare to others?", flowKey: "partner-portfolio" },
+  { key: "renewal-risk", label: "What's the renewal risk exposure across the portfolio?", inputText: "What's the renewal risk exposure across the portfolio?", flowKey: "renewal-risk" },
 ];
 
 const COMPARE_KEYS: Record<string, string> = {
@@ -320,37 +400,64 @@ function buildSuggestions(lastTopic: ChartKind | null, wasComparison: boolean) {
   return { primary: compare, alt: standalone };
 }
 
-function buildFlows(charts: ReturnType<typeof buildChartData>, metrics: ReturnType<typeof buildMetrics>): Record<string, FlowEntry> {
+function buildFlows(charts: ReturnType<typeof buildChartData>, metrics: ReturnType<typeof buildMetrics>, allData: RowData[], engagementRow?: RowData): Record<string, FlowEntry> {
   const topService = charts.impactByService[0];
   const peakBucket = charts.increaseDistribution.reduce((a, b) => (b.count as number) > (a.count as number) ? b : a);
   const atRiskFee = charts.renewalRisk.find(r => r.status === "At Risk");
 
+  const engSL = engagementRow?.serviceLine || "";
+  const engIncrease = engagementRow?.revisedPriceIncreasePct ?? engagementRow?.recPriceIncreasePct ?? 0;
+  const engFee = engagementRow?.revisedTotalFee ?? 0;
+  const slPeers = allData.filter(r => r.serviceLine === engSL);
+  const slAvgIncrease = slPeers.length > 0 ? slPeers.reduce((s, r) => s + r.revisedPriceIncreasePct, 0) / slPeers.length : 0;
+  const slAvgFee = slPeers.length > 0 ? slPeers.reduce((s, r) => s + r.revisedTotalFee, 0) / slPeers.length : 0;
+  const engVsSl = engIncrease - slAvgIncrease;
+  const engVsSlDir = engVsSl > 0.2 ? "above" : engVsSl < -0.2 ? "below" : "in line with";
+
+  const isMeridianDemo = engagementRow?.clientName === "Meridian Health Systems" && engagementRow?.projectName === "Annual Audit FY26";
+  const peerChartData: Record<string, unknown>[] = isMeridianDemo
+    ? [
+        { name: "Apex Capital", increase: 6.2, fee: "$210K", isTarget: false },
+        { name: "Pacific Rim Health", increase: 7.5, fee: "$245K", isTarget: false },
+        { name: "Vanguard Senior", increase: 8.1, fee: "$270K", isTarget: false },
+        { name: "Meridian Health ★", increase: 9.0, fee: "$285K", isTarget: true },
+        { name: "Atlas Industrial", increase: 10.3, fee: "$310K", isTarget: false },
+        { name: "Horizon Pharma", increase: 11.0, fee: "$335K", isTarget: false },
+        { name: "Liberty Mutual HC", increase: 11.8, fee: "$360K", isTarget: false },
+        { name: "Cornerstone Medical", increase: 12.5, fee: "$390K", isTarget: false },
+      ]
+    : [];
+
   return {
     "impact-by-service": {
       thinkingDelay: 1800,
-      thinkingMessage: "Aggregating impact by service line...",
+      thinkingMessage: "Comparing this engagement to its service line...",
       response: {
-        title: "Impact by Service Line",
-        content: `**${topService?.serviceLine}** drives the largest revised impact at **${fmtFull(topService?.impact || 0)}**. Total portfolio impact across all service lines is **${fmtFull(metrics.totalImpact)}** with an average price increase of **${metrics.avgIncrease.toFixed(1)}%**.`,
+        title: "This Engagement vs. Service Line",
+        content: engagementRow
+          ? `This engagement has a **${engIncrease.toFixed(1)}%** recommended increase and a revised fee of **${fmtFull(engFee)}**. That's **${engVsSlDir}** the **${engSL}** average of **${slAvgIncrease.toFixed(1)}%** across ${slPeers.length} engagements (avg fee: ${fmtFull(Math.round(slAvgFee))}). The chart below shows total revised impact by service line — **${engSL}** accounts for **${fmtFull(charts.impactByService.find(s => s.serviceLine === engSL)?.impact || 0)}** of the **${fmtFull(metrics.totalImpact)}** portfolio total.`
+          : `**${topService?.serviceLine}** drives the largest revised impact at **${fmtFull(topService?.impact || 0)}**. Total portfolio impact is **${fmtFull(metrics.totalImpact)}** with an average increase of **${metrics.avgIncrease.toFixed(1)}%**.`,
         charts: [{ type: "impact-by-service", data: charts.impactByService }],
         metrics: [
-          { label: "Total Impact", value: fmtK(metrics.totalImpact), trend: metrics.totalImpact >= 0 ? "up" : "down" },
-          { label: "Avg Increase", value: `${metrics.avgIncrease.toFixed(1)}%` },
-          { label: "Service Lines", value: String(charts.impactByService.length) },
+          { label: "This Engagement", value: `${engIncrease.toFixed(1)}%` },
+          { label: `${engSL || "SL"} Avg`, value: `${slAvgIncrease.toFixed(1)}%` },
+          { label: "Portfolio Avg", value: `${metrics.avgIncrease.toFixed(1)}%` },
         ],
       },
     },
     "increase-distribution": {
       thinkingDelay: 1500,
-      thinkingMessage: "Analyzing price increase distribution...",
+      thinkingMessage: "Comparing this increase to the portfolio...",
       response: {
-        title: "Price Increase Distribution",
-        content: `Most engagements fall in the **${peakBucket.range}** increase range (${peakBucket.count} items). The distribution shows a ${metrics.avgIncrease > 6 ? "skew toward higher increases" : "balanced spread"}, with the average across all ${charts.increaseDistribution.reduce((s, b) => s + (b.count as number), 0)} engagements at **${metrics.avgIncrease.toFixed(1)}%**.`,
+        title: "This Increase vs. Portfolio",
+        content: engagementRow
+          ? `This engagement's **${engIncrease.toFixed(1)}%** increase falls in the **${peakBucket.range}** range, where ${peakBucket.count} of ${allData.length} engagements land. The portfolio average is **${metrics.avgIncrease.toFixed(1)}%** — this engagement is **${engVsSlDir}** average. ${engVsSl > 0.5 ? "A higher-than-average increase here is supported by the margin gap and peer data." : engVsSl < -0.5 ? "The lower increase reflects relationship or retention considerations." : "This is a standard increase consistent with the rest of the book."}`
+          : `Most engagements fall in the **${peakBucket.range}** increase range (${peakBucket.count} items), with the portfolio average at **${metrics.avgIncrease.toFixed(1)}%**.`,
         charts: [{ type: "increase-distribution", data: charts.increaseDistribution }],
         metrics: [
-          { label: "Avg Increase", value: `${metrics.avgIncrease.toFixed(1)}%` },
-          { label: "Peak Range", value: String(peakBucket.range) },
-          { label: "Total Items", value: String(charts.increaseDistribution.reduce((s, b) => s + (b.count as number), 0)) },
+          { label: "This Engagement", value: `${engIncrease.toFixed(1)}%` },
+          { label: "Portfolio Avg", value: `${metrics.avgIncrease.toFixed(1)}%` },
+          { label: "Most Common", value: String(peakBucket.range) },
         ],
       },
     },
@@ -359,7 +466,9 @@ function buildFlows(charts: ReturnType<typeof buildChartData>, metrics: ReturnTy
       thinkingMessage: "Loading review status...",
       response: {
         title: "Review Status Breakdown",
-        content: `**${metrics.needsReview} engagements** still need review. ${metrics.approved} have been approved or submitted. The pipeline is **${Math.round(metrics.approved / charts.reviewStatus.reduce((s, r) => s + (r.count as number), 0) * 100)}% complete** through the review cycle.`,
+        content: engagementRow
+          ? `This engagement is currently **${engagementRow.status}**. Across the portfolio, **${metrics.needsReview} engagements** still need review while ${metrics.approved} are complete or revised. The cycle is **${Math.round(metrics.approved / charts.reviewStatus.reduce((s, r) => s + (r.count as number), 0) * 100)}% complete**.`
+          : `**${metrics.needsReview} engagements** still need review. ${metrics.approved} are complete or revised. The pipeline is **${Math.round(metrics.approved / charts.reviewStatus.reduce((s, r) => s + (r.count as number), 0) * 100)}% complete** through the review cycle.`,
         charts: [{ type: "review-status", data: charts.reviewStatus }],
         metrics: [
           { label: "Needs Review", value: String(metrics.needsReview), trend: "down" },
@@ -373,7 +482,9 @@ function buildFlows(charts: ReturnType<typeof buildChartData>, metrics: ReturnTy
       thinkingMessage: "Analyzing partner portfolios...",
       response: {
         title: "Partner Portfolio Overview",
-        content: `**${metrics.topPartner[0]}** manages the largest portfolio at **${fmtFull(metrics.topPartner[1])}** in revised total fees. Total revised fees across all partners: **${fmtFull(metrics.totalRevised)}**.`,
+        content: engagementRow
+          ? `This engagement is managed by **${engagementRow.partnerName}**. The largest overall portfolio belongs to **${metrics.topPartner[0]}** at **${fmtFull(metrics.topPartner[1])}** in revised total fees. Total revised fees across all partners: **${fmtFull(metrics.totalRevised)}**.`
+          : `**${metrics.topPartner[0]}** manages the largest portfolio at **${fmtFull(metrics.topPartner[1])}** in revised total fees. Total revised fees across all partners: **${fmtFull(metrics.totalRevised)}**.`,
         charts: [{ type: "partner-portfolio", data: charts.partnerPortfolio }],
         metrics: [
           { label: "Top Partner", value: String(metrics.topPartner[0]) },
@@ -387,7 +498,9 @@ function buildFlows(charts: ReturnType<typeof buildChartData>, metrics: ReturnTy
       thinkingMessage: "Assessing renewal risk exposure...",
       response: {
         title: "Renewal Risk Exposure",
-        content: `**${metrics.atRisk} clients are flagged At Risk**, representing **${fmtFull(atRiskFee?.totalFee || 0)}** in current fee exposure. The majority of the portfolio is in Active or Renewed status. At-risk accounts should be prioritized for partner outreach before price increases take effect.`,
+        content: engagementRow
+          ? `This engagement's client is currently **${engagementRow.clientRenewalStatus}**. Across the portfolio, **${metrics.atRisk} clients are flagged At Risk**, representing **${fmtFull(atRiskFee?.totalFee || 0)}** in fee exposure. ${engagementRow.clientRenewalStatus === "At Risk" ? "This client's at-risk status means the recommended increase should be approached carefully during the conversation." : "At-risk accounts should be prioritized for partner outreach before price increases take effect."}`
+          : `**${metrics.atRisk} clients are flagged At Risk**, representing **${fmtFull(atRiskFee?.totalFee || 0)}** in current fee exposure. At-risk accounts should be prioritized for partner outreach before price increases take effect.`,
         charts: [{ type: "renewal-risk", data: charts.renewalRisk }],
         metrics: [
           { label: "At Risk", value: `${metrics.atRisk} clients`, trend: "down" },
@@ -540,11 +653,69 @@ function buildFlows(charts: ReturnType<typeof buildChartData>, metrics: ReturnTy
         ],
       },
     },
+    ...(isMeridianDemo ? {
+      "meridian-why-9": {
+        thinkingDelay: 2000,
+        thinkingMessage: "Analyzing peer data and margin drivers...",
+        response: {
+          title: "Why 9% Is the Right Price Increase",
+          content: "The model recommends a **9.0% price increase** based on three factors:\n\n**1. Peer positioning** — At 9.0%, this increase sits just below the **peer average of 9.6%** for similar-sized Audit & Assurance engagements ($200K–$400K). This is a defensible position — you're not asking for more than the market.\n\n**2. Client tolerance** — Meridian has accepted fee increases of **6.2%**, **7.8%**, and **8.1%** over the last three cycles. 9.0% is the highest increase with **85%+ predicted acceptance** based on their history.\n\n**3. Margin recovery** — Current realized margin is **18.3%** vs. the **24.1%** peer average. A 9.0% increase closes about 3.4pp of that 5.8pp gap, with the rest recoverable next cycle.",
+          charts: [{ type: "peer-increase-comparison" as ChartKind, data: peerChartData }],
+          metrics: [
+            { label: "Price Increase", value: "9.0%" },
+            { label: "Peer Avg Increase", value: "9.6%" },
+            { label: "Acceptance Prob.", value: "~85%" },
+          ],
+          suggestions: [
+            { label: "What if we proposed a lower increase?", inputText: "What if we proposed a lower increase?", flowKey: "meridian-what-if" },
+            { label: "You could also explore: margin gap breakdown by cost driver, acceptance trend over past 5 cycles, or peer fee benchmarking by region", inputText: "", flowKey: "", disabled: true },
+          ],
+        },
+      },
+      "meridian-what-if": {
+        thinkingDelay: 1800,
+        thinkingMessage: "Running scenario analysis...",
+        response: {
+          title: "Scenario: What If We Go Lower?",
+          content: "**At 7%** (what the client has accepted before):\n• Revised fee drops to ~**$305K** (vs. ~$311K at 9%)\n• Margin improves to only **20.1%** — still 4.0pp below peers\n• Leaves ~**$6K/year** on the table\n• Acceptance probability jumps to ~95%, but barely moves the needle on margin\n\n**Below 7%** enters what the model flags as a **margin trap** — each under-priced cycle makes the next correction steeper. At 5%, you'd need **12%+** next cycle to catch up, which is historically unacceptable for this client.\n\n**At 9%**, you're in the sweet spot: **meaningful margin recovery** without exceeding the client's tolerance. And you're still below the peer average, which gives you air cover in the conversation.",
+          charts: [{ type: "peer-increase-scenario" as ChartKind, data: peerChartData }],
+          metrics: [
+            { label: "At 9%", value: "~$311K" },
+            { label: "At 7%", value: "~$305K" },
+            { label: "Gap", value: "~$6K/yr" },
+          ],
+          suggestions: [
+            { label: "Give me talking points for the price conversation", inputText: "Give me talking points for the price conversation", flowKey: "meridian-talking-points" },
+            { label: "Other analyses: multi-year scenario modeling, sensitivity to scope changes, or win/loss rate by increase bracket", inputText: "", flowKey: "", disabled: true },
+          ],
+        },
+      },
+      "meridian-talking-points": {
+        thinkingDelay: 2200,
+        thinkingMessage: "Preparing your conversation brief...",
+        response: {
+          title: "Meridian Health — Price Increase Conversation Brief",
+          content: "**Your position:** 9.0% fee increase, $285K → ~$311K. This is below the 9.6% average across similar Audit & Assurance engagements.\n\n**Lead with value, not cost:**\n• \"We've been your audit partner for 8 years. Our team's knowledge of your multi-entity structure and SOX 404 requirements would take a new firm 12–18 months to rebuild.\"\n• \"This increase is below what we're seeing across similar healthcare audit engagements this cycle.\"\n\n**If they push back on the increase:**\n• \"We've kept increases in the 6–8% range for three straight cycles. This 9% reflects accumulated cost pressure — market labor rates, expanded regulatory scope (ASC 842, ESG), and multi-entity complexity.\"\n• \"A new auditor would likely quote 15–20% above our current rate in year one.\"\n\n**If they ask to reduce scope:**\n• \"The SOX 404 and multi-entity consolidation are standards-driven — not optional add-ons. We can discuss phasing advisory work, but the core audit scope is fixed.\"\n\n**Anchor statistic:** Peers in the $200K–$400K band are averaging 9.6% increases this cycle. You're recommending below that.",
+          metrics: [
+            { label: "Proposed Fee", value: "~$311K" },
+            { label: "Peer Avg Increase", value: "9.6%" },
+            { label: "Relationship", value: "8 Years" },
+          ],
+          suggestions: [
+            { label: "Explore portfolio analytics", inputText: "Explore portfolio analytics", flowKey: "impact-by-service" },
+            { label: "More possibilities: client profitability deep-dive, realization rate trend, or staffing cost attribution analysis", inputText: "", flowKey: "", disabled: true },
+          ],
+        },
+      },
+    } : {}),
   };
 }
 
 function resolveFlowKey(text: string): string | null {
   const t = text.toLowerCase();
+  if (t.includes("why") && t.includes("9")) return "meridian-why-9";
+  if ((t.includes("what if") || t.includes("lower")) && t.includes("increase")) return "meridian-what-if";
+  if (t.includes("talking point")) return "meridian-talking-points";
   if (t.includes("impact") && t.includes("increase")) return "compare-impact-increase";
   if (t.includes("impact") && t.includes("status")) return "compare-impact-status";
   if (t.includes("impact") && t.includes("partner")) return "compare-impact-partner";
@@ -568,12 +739,19 @@ let msgId = 0;
 function nextId() { return `amsg-${++msgId}`; }
 
 export default function AnalyticsDrawer({ clientName, projectName, data, preloadFlow }: { clientName: string; projectName: string; data: RowData[]; preloadFlow?: string }) {
+  const engagementRow = useMemo(() => data.find(r => r.clientName === clientName && r.projectName === projectName), [data, clientName, projectName]);
   const charts = useMemo(() => buildChartData(data), [data]);
   const metrics = useMemo(() => buildMetrics(data), [data]);
-  const flows = useMemo(() => buildFlows(charts, metrics), [charts, metrics]);
+  const flows = useMemo(() => buildFlows(charts, metrics, data, engagementRow), [charts, metrics, data, engagementRow]);
 
-  const greeting = `Welcome to Decision Support for **${clientName} — ${projectName}**. I can help you explore pricing analytics across ${data.length} engagements. What would you like to see?`;
-  const initialSuggestions = TOPICS.map((t) => ({ label: t.label, inputText: t.inputText, flowKey: t.flowKey }));
+  const isMeridianDemo = clientName === "Meridian Health Systems" && projectName === "Annual Audit FY26";
+
+  const greeting = isMeridianDemo
+    ? `You're looking at **Meridian Health Systems — Annual Audit FY26**, a **$285K** engagement in Audit & Assurance. The model has analyzed this engagement against peer data, margin targets, and client history to recommend a **9.0% price increase** (current fee → ~$311K). I can walk you through the reasoning.`
+    : `You're looking at **${clientName} — ${projectName}**, one of ${data.length} engagements in this review cycle. I can show you how this engagement compares to the rest of the portfolio.`;
+  const initialSuggestions: Suggestion[] = isMeridianDemo
+    ? [{ label: "Why is 9% the right price increase?", inputText: "Why is 9% the right price increase?", flowKey: "meridian-why-9" }]
+    : TOPICS.map((t) => ({ label: t.label, inputText: t.inputText, flowKey: t.flowKey }));
 
   const [messages, setMessages] = useState<AnalyticsMsg[]>([
     { id: nextId(), role: "assistant", content: greeting, suggestions: initialSuggestions },
@@ -619,9 +797,32 @@ export default function AnalyticsDrawer({ clientName, projectName, data, preload
   }, [messages, isThinking]);
 
   const handleChipClick = useCallback((chip: Suggestion) => {
-    setChatInput(chip.inputText);
+    if (isThinking) return;
+    setMessages((prev) => [...prev, { id: nextId(), role: "user", content: chip.inputText }]);
     pendingFlowKeyRef.current = chip.flowKey;
-  }, []);
+    setChatInput("");
+    const flowKey = chip.flowKey;
+    const flow = flowKey ? flows[flowKey] : null;
+    if (!flow) return;
+    setIsThinking(true);
+    setThinkingMessage(flow.thinkingMessage);
+    setTimeout(() => {
+      const isMeridianFlow = flowKey.startsWith("meridian-");
+      if (isMeridianFlow) {
+        setMessages((prev) => [...prev, { id: nextId(), role: "assistant", ...flow.response }]);
+      } else {
+        const isCompare = flowKey.startsWith("compare-");
+        const matchedTopic = TOPICS.find((t) => t.flowKey === flowKey);
+        const newTopic = matchedTopic ? matchedTopic.key : lastTopic;
+        if (newTopic && !isCompare) setLastTopic(newTopic);
+        setWasComparison(isCompare);
+        const { primary, alt } = buildSuggestions(newTopic, isCompare);
+        setMessages((prev) => [...prev, { id: nextId(), role: "assistant", ...flow.response, suggestions: primary, altSuggestions: alt ?? undefined }]);
+      }
+      setIsThinking(false);
+      setThinkingMessage(undefined);
+    }, flow.thinkingDelay);
+  }, [isThinking, flows, lastTopic]);
 
   const handleSend = useCallback(() => {
     const text = chatInput.trim();
@@ -650,21 +851,31 @@ export default function AnalyticsDrawer({ clientName, projectName, data, preload
     setIsThinking(true);
     setThinkingMessage(flow.thinkingMessage);
 
+    const isMeridianFlow = flowKey?.startsWith("meridian-") ?? false;
+
     const isCompare = flowKey?.startsWith("compare-") ?? false;
     let newTopic = lastTopic;
-    if (!isCompare) {
+    if (!isCompare && !isMeridianFlow) {
       const matched = TOPICS.find((t) => t.flowKey === flowKey);
       if (matched) newTopic = matched.key;
     }
 
     setTimeout(() => {
-      const { primary, alt } = buildSuggestions(isCompare ? null : newTopic, isCompare);
-      setMessages((prev) => [...prev, {
-        ...flow.response,
-        id: nextId(),
-        role: "assistant",
-        suggestions: primary,
-      }]);
+      if (isMeridianFlow) {
+        setMessages((prev) => [...prev, {
+          ...flow.response,
+          id: nextId(),
+          role: "assistant",
+        }]);
+      } else {
+        const { primary } = buildSuggestions(isCompare ? null : newTopic, isCompare);
+        setMessages((prev) => [...prev, {
+          ...flow.response,
+          id: nextId(),
+          role: "assistant",
+          suggestions: primary,
+        }]);
+      }
       setIsThinking(false);
       setThinkingMessage(undefined);
       setLastTopic(newTopic);
@@ -719,7 +930,7 @@ export default function AnalyticsDrawer({ clientName, projectName, data, preload
               {lastTopic && !wasComparison ? "Compare With" : "Explore"}
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
-              {lastAssistant.suggestions.map((s) => (
+              {lastAssistant.suggestions.filter(s => !s.disabled).map((s) => (
                 <Chip
                   key={s.label}
                   label={s.label}
@@ -730,6 +941,11 @@ export default function AnalyticsDrawer({ clientName, projectName, data, preload
                 />
               ))}
             </Box>
+            {lastAssistant.suggestions.filter(s => s.disabled).map((s) => (
+              <Typography key={s.label} sx={{ fontSize: 11, color: "rgba(0,0,0,0.45)", fontStyle: "italic", mt: 1, lineHeight: 1.5 }}>
+                {s.label}
+              </Typography>
+            ))}
             {lastTopic && !wasComparison && (() => {
               const { alt } = buildSuggestions(lastTopic, false);
               if (!alt) return null;
