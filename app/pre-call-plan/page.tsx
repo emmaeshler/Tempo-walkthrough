@@ -718,7 +718,18 @@ export default function PreCallPlanPage() {
       }
     };
     window.addEventListener("tour-step", handler);
-    return () => window.removeEventListener("tour-step", handler);
+
+    const tempoHandler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.action === "auto-generate" && contentState === "empty") {
+        handleGenerateRef.current();
+      }
+    };
+    window.addEventListener("tempo-tour-step", tempoHandler);
+    return () => {
+      window.removeEventListener("tour-step", handler);
+      window.removeEventListener("tempo-tour-step", tempoHandler);
+    };
   }, [contentState]);
 
   const generatePDF = () => {

@@ -29,6 +29,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import AppsIcon from "@mui/icons-material/Apps";
 import SlideshowIcon from "@mui/icons-material/Slideshow";
 import { useWalkthrough } from "./ModelWalkthrough/WalkthroughContext";
+import { useTempoTour } from "./TempoTour/TempoTourContext";
 
 const DRAWER_WIDTH = 340;
 
@@ -59,22 +60,13 @@ function Logo({ size = 20 }: { size?: number }) {
   );
 }
 
-function WalkthroughTrigger() {
-  const { open } = useWalkthrough();
-  return (
-    <Tooltip title="Model Walkthrough" arrow>
-      <IconButton onClick={open} size="small" sx={{ color: "#666" }}>
-        <SlideshowIcon fontSize="small" />
-      </IconButton>
-    </Tooltip>
-  );
-}
-
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tempoExpanded, setTempoExpanded] = useState(true);
   const [activeInstance, setActiveInstance] = useState(INSTANCES[0]);
   const [instanceModalOpen, setInstanceModalOpen] = useState(false);
+  const { open: openTempoTour } = useTempoTour();
+  const { open: openWalkthrough } = useWalkthrough();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -131,54 +123,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </Typography>
         </Box>
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1 }}>
-          <WalkthroughTrigger />
-          <Tooltip
-            arrow
-            placement="bottom-end"
-            slotProps={{
-              tooltip: {
-                sx: { maxWidth: 340, bgcolor: "#f5f5f5", color: "#333", border: "1px solid rgba(0,0,0,0.12)", p: 2, borderRadius: "8px", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" },
-              },
-              arrow: { sx: { color: "#f5f5f5" } },
-            }}
-            title={
-              <Box>
-                <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#00446a", mb: 0.75 }}>What is Tempo?</Typography>
-                <Typography sx={{ fontSize: 11, lineHeight: 1.7, color: "rgba(0,0,0,0.7)", mb: 1 }}>
-                  A centralized review platform for model-driven recommendations — pricing, inventory, hours, project management, and more. Tempo gives decision-makers the context they need to review, adjust, and act on recommendations in one place.
-                </Typography>
-                <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#00446a", mb: 0.75 }}>About this demo</Typography>
-                <Typography sx={{ fontSize: 11, lineHeight: 1.7, color: "rgba(0,0,0,0.7)", mb: 1 }}>
-                  This demo is modeled after a mid-market professional services firm with ~$15M in managed engagements across 30 clients.
-                </Typography>
-                <Box component="ul" sx={{ m: 0, pl: 1.75, "& li": { fontSize: 11, lineHeight: 1.7, color: "rgba(0,0,0,0.7)", mb: 0.25 } }}>
-                  <li><strong>Client:</strong> Meridian Health Systems (featured account) — 8-year relationship, $500K across 3 engagements</li>
-                  <li><strong>Service lines:</strong> Audit &amp; Assurance, Tax, Advisory, Accounting, Consulting</li>
-                  <li><strong>Products:</strong> Annual Audit, SOX Compliance, Internal Controls, Federal &amp; State Tax Planning, M&amp;A Due Diligence, Outsourced CFO, and more</li>
-                  <li><strong>Partners:</strong> 8 named partners (e.g. J. Whitfield, M. Richardson) each managing a book of business</li>
-                  <li><strong>Data:</strong> 102 engagements with fees, scope changes, recommended increases, retention buckets, and renewal status</li>
-                </Box>
-                <Typography sx={{ fontSize: 11, lineHeight: 1.7, color: "rgba(0,0,0,0.55)", mt: 1, fontStyle: "italic" }}>
-                  In production, Tempo is tailored to your data and pricing model.
-                </Typography>
-              </Box>
-            }
-          >
-            <Box
-              sx={{
-                width: 22,
-                height: 22,
-                borderRadius: "4px",
-                bgcolor: "rgba(0,0,0,0.06)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                "&:hover": { bgcolor: "rgba(0,0,0,0.1)" },
-              }}
-            >
-              <Typography sx={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)" }}>?</Typography>
-            </Box>
+          <Tooltip title="What is Tempo?" arrow>
+            <IconButton onClick={openTempoTour} size="small" sx={{ color: "#666" }}>
+              <SlideshowIcon fontSize="small" />
+            </IconButton>
           </Tooltip>
         </Box>
       </Box>
@@ -315,6 +263,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               />
               <ChevronRightIcon sx={{ color: "rgba(0,0,0,0.3)", fontSize: 18 }} />
             </ListItemButton>
+
+            <ListItemButton
+              onClick={() => { openWalkthrough(); setSidebarOpen(false); }}
+              sx={{ py: 1, px: 2.5, opacity: 0.4, "&:hover": { opacity: 0.7 } }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <SlideshowIcon sx={{ color: "rgba(0,0,0,0.3)", fontSize: 20 }} />
+              </ListItemIcon>
+              <ListItemText
+                primary="Model Walkthrough"
+                slotProps={{ primary: { sx: { fontSize: 12, color: "rgba(0,0,0,0.4)" } } }}
+              />
+            </ListItemButton>
           </List>
 
           {/* User info */}
@@ -429,6 +390,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </DialogContent>
       </Dialog>
+
     </Box>
   );
 }

@@ -64,6 +64,18 @@ const STEPS: Step[] = [
   },
   {
     page: "/",
+    target: undefined,
+    action: "open-mass-action",
+    icon: "⚡",
+    color: "#D97C14",
+    title: "Mass Actions at Scale",
+    caption:
+      "When hundreds of rows need the same effective date or a consistent price adjustment, Mass Actions let you apply changes across your entire book in seconds — not hours. Select a segment, choose the action, review the impact, and submit.",
+    detail:
+      "Without this, pricing teams spend days copying values row by row or managing fragile spreadsheet macros. Mass Actions eliminate that manual work while keeping guardrails in place — validation errors surface before anything is committed, and approval workflows still apply.",
+  },
+  {
+    page: "/",
     target: "kpi-cards",
     icon: "📊",
     color: "#D97C14",
@@ -241,7 +253,14 @@ export default function TempoTourOverlay() {
 
   let cardStyle: Record<string, unknown>;
 
-  if (!spotlight) {
+  if (!spotlight && step.action === "open-mass-action") {
+    cardStyle = {
+      position: "fixed" as const,
+      top: GAP,
+      right: GAP,
+      width: CARD_W,
+    };
+  } else if (!spotlight) {
     cardStyle = {
       position: "fixed" as const,
       top: "50%",
@@ -256,7 +275,7 @@ export default function TempoTourOverlay() {
 
     if (wideTarget) {
       top = spotlight.top + GAP;
-      left = vw - CARD_W - GAP - 40;
+      left = currentStep === 1 ? GAP : vw - CARD_W - GAP - 40;
     } else {
       const targetCenterX = spotlight.left + spotlight.width / 2;
       const onLeft = targetCenterX < vw / 2;
@@ -314,7 +333,7 @@ export default function TempoTourOverlay() {
         onClick={(e) => e.stopPropagation()}
         sx={{
           ...cardStyle,
-          zIndex: 1402,
+          zIndex: 1500,
           bgcolor: "white",
           borderRadius: "12px",
           boxShadow: "0 12px 48px rgba(0,0,0,0.25)",

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import WalkthroughShell from "../components/ModelWalkthrough/WalkthroughShell";
+import TempoTourShell from "../components/TempoTour/TempoTourShell";
 
 export const metadata: Metadata = {
   title: "Insight2Profit - Drive Applications",
@@ -21,7 +22,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <WalkthroughShell>{children}</WalkthroughShell>
+        <TempoTourShell>
+          <WalkthroughShell>{children}</WalkthroughShell>
+        </TempoTourShell>
       </body>
     </html>
   );

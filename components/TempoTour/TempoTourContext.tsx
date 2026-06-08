@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback } from "react";
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 10;
 
 interface TempoTourCtx {
   isOpen: boolean;

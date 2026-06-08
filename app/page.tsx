@@ -29,6 +29,8 @@ import {
   FormControlLabel,
   Select,
   MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -61,6 +63,8 @@ import {
   Refresh as RefreshIcon,
   RadioButtonUnchecked as RadioUncheckedIcon,
   SwapHoriz as SwapHorizIcon,
+  Remove as RemoveCircleOutlineIcon,
+  CalendarMonth as CalendarMonthIcon,
 } from "@mui/icons-material";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -632,6 +636,8 @@ export default function PriceReviewPage() {
   const [createLayoutOpen, setCreateLayoutOpen] = useState(false);
   const [expandedSubs, setExpandedSubs] = useState<Set<string>>(new Set());
   const [layoutPartnerFilter, setLayoutPartnerFilter] = useState<string | null>(null);
+  const [massActionOpen, setMassActionOpen] = useState(false);
+  const [massActionStep, setMassActionStep] = useState<1 | 2>(1);
   const filteredData = useMemo(() => {
     let data = tableData;
     if (statusFilter.size > 0) data = data.filter(r => statusFilter.has(r.status));
@@ -755,10 +761,22 @@ export default function PriceReviewPage() {
         setDecisionSupportView("price-history");
       } else if (detail.action === "open-drawer-explain-price") {
         setRevisedOverlay(null);
-        setDrawerOpenRow(0);
-        setActiveDrawerTab("explain");
+        setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setTimeout(() => {
+          setDrawerOpenRow(0);
+          setActiveDrawerTab("explain");
+        }, 100);
+      } else if (detail.action === "open-mass-action") {
+        setRevisedOverlay(null);
+        setDrawerOpenRow(null);
+        setMassActionOpen(true);
+        setMassActionStep(1);
       } else {
         setRevisedOverlay(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
       }
     };
     window.addEventListener("tempo-tour-step", tempoHandler);
@@ -1027,8 +1045,8 @@ export default function PriceReviewPage() {
             <Button variant="outlined" size="small" onClick={(e) => setLayoutAnchor(e.currentTarget)} sx={{ height: 30, px: 1.5, borderColor: layoutAnchor ? "#00446a" : "rgba(0,0,0,0.12)", borderRadius: "6px", color: layoutAnchor ? "#00446a" : "rgba(0,0,0,0.6)", fontSize: 10, fontWeight: 500, textTransform: "none", minWidth: 0, bgcolor: layoutAnchor ? "rgba(0,68,106,0.04)" : undefined, "&:hover": { bgcolor: "rgba(0,0,0,0.04)", borderColor: "rgba(0,0,0,0.24)" } }}>
               Data Layouts
             </Button>
-            <Button variant="outlined" size="small" disabled={selectedRows.size === 0} sx={{ height: 30, px: 1.5, borderColor: selectedRows.size > 0 ? "rgba(0,0,0,0.24)" : "rgba(0,0,0,0.08)", borderRadius: "6px", fontSize: 10, fontWeight: 500, textTransform: "none", minWidth: 0, color: selectedRows.size > 0 ? "rgba(0,0,0,0.7)" : undefined }}>
-              Create Mass Action to {selectedRows.size} Items
+            <Button data-tour="mass-action-btn" variant="outlined" size="small" onClick={() => setMassActionOpen(true)} sx={{ height: 30, px: 1.5, borderColor: selectedRows.size > 0 ? "rgba(0,0,0,0.24)" : "rgba(0,0,0,0.12)", borderRadius: "6px", fontSize: 10, fontWeight: 500, textTransform: "none", minWidth: 0, color: selectedRows.size > 0 ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.6)", "&:hover": { bgcolor: "rgba(0,0,0,0.04)", borderColor: "rgba(0,0,0,0.24)" } }}>
+              Create Mass Action{selectedRows.size > 0 ? ` to ${selectedRows.size} Items` : ""}
             </Button>
             <Button variant="outlined" size="small" sx={{ height: 30, px: 1.5, borderColor: "rgba(0,0,0,0.12)", borderRadius: "6px", color: "rgba(0,0,0,0.6)", fontSize: 10, fontWeight: 500, textTransform: "none", minWidth: 0, "&:hover": { bgcolor: "rgba(0,0,0,0.04)", borderColor: "rgba(0,0,0,0.24)" } }}>
               Mark as Complete
@@ -1683,6 +1701,238 @@ export default function PriceReviewPage() {
               Save &amp; Apply Layout
             </Button>
           </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mass Action Dialog */}
+      <Dialog open={massActionOpen} onClose={() => { setMassActionOpen(false); setMassActionStep(1); }} maxWidth="md" fullWidth sx={{ zIndex: 1403 }} slotProps={{ paper: { sx: { borderRadius: "12px", overflow: "hidden" } } }}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", bgcolor: "#f8f9fa", borderBottom: "1px solid rgba(0,0,0,0.08)", py: 1.5, px: 3 }}>
+          <Typography sx={{ fontSize: 18, fontWeight: 600, color: "#333" }}>Create Mass Action</Typography>
+          <IconButton onClick={() => { setMassActionOpen(false); setMassActionStep(1); }} size="small"><CloseIcon sx={{ fontSize: 18 }} /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          {massActionStep === 1 ? (
+            <>
+              {/* Affected Rows */}
+              <Box sx={{ px: 3, py: 1.5, bgcolor: "#fff", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.6)" }}>
+                  Affected Rows: <Box component="span" sx={{ fontWeight: 600, color: "#333" }}>{selectedRows.size > 0 ? selectedRows.size : 127}</Box>
+                  <Box component="span" sx={{ ml: 1, fontSize: 12, color: "rgba(0,0,0,0.4)" }}>(read-only rows will be ignored)</Box>
+                </Typography>
+              </Box>
+
+              {/* Select Mass Action Type */}
+              <Box sx={{ px: 3, pt: 2.5, pb: 1 }}>
+                <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#333", mb: 0.5 }}>Select Mass Action Type</Typography>
+                <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,0.45)", mb: 2 }}>Choose a column and action type to apply to the selected rows.</Typography>
+              </Box>
+
+              {/* Action Rows */}
+              <Box sx={{ px: 3, display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Box sx={{ width: 20, height: 20, borderRadius: "50%", bgcolor: "#e3f2fd", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Typography sx={{ fontSize: 10, fontWeight: 700, color: "#1976d2" }}>1</Typography>
+                  </Box>
+                  <FormControl size="small" sx={{ flex: 1 }}>
+                    <InputLabel sx={{ fontSize: 13 }}>Column</InputLabel>
+                    <Select label="Column" value="effective-start" sx={{ fontSize: 13, borderRadius: "6px" }}>
+                      <MenuItem value="effective-start">Effective Start</MenuItem>
+                      <MenuItem value="revised-target">Revised Target %</MenuItem>
+                      <MenuItem value="revised-fee">Revised Fee</MenuItem>
+                      <MenuItem value="revised-effective">Revised Effective Rate</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <FormControl size="small" sx={{ flex: 1 }}>
+                    <InputLabel sx={{ fontSize: 13 }}>Action Type</InputLabel>
+                    <Select label="Action Type" value="set-to-date" sx={{ fontSize: 13, borderRadius: "6px" }}>
+                      <MenuItem value="set-to-date">Set to Date</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <TextField
+                    size="small"
+                    type="date"
+                    defaultValue="2026-07-01"
+                    sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: "6px", fontSize: 13 } }}
+                    slotProps={{ input: { startAdornment: <InputAdornment position="start"><CalendarMonthIcon sx={{ fontSize: 16, color: "rgba(0,0,0,0.4)" }} /></InputAdornment> } }}
+                  />
+                  <IconButton size="small" sx={{ color: "rgba(0,0,0,0.3)" }}>
+                    <RemoveCircleOutlineIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Box sx={{ width: 20, height: 20, borderRadius: "50%", bgcolor: "#e3f2fd", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Typography sx={{ fontSize: 10, fontWeight: 700, color: "#1976d2" }}>2</Typography>
+                  </Box>
+                  <FormControl size="small" sx={{ flex: 1 }}>
+                    <InputLabel sx={{ fontSize: 13 }}>Column</InputLabel>
+                    <Select label="Column" value="revised-target" sx={{ fontSize: 13, borderRadius: "6px" }}>
+                      <MenuItem value="effective-start">Effective Start</MenuItem>
+                      <MenuItem value="revised-target">Revised Target %</MenuItem>
+                      <MenuItem value="revised-fee">Revised Fee</MenuItem>
+                      <MenuItem value="revised-effective">Revised Effective Rate</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <FormControl size="small" sx={{ flex: 1 }}>
+                    <InputLabel sx={{ fontSize: 13 }}>Action Type</InputLabel>
+                    <Select label="Action Type" value="" sx={{ fontSize: 13, borderRadius: "6px" }}>
+                      <MenuItem value="set-amount">Set to Amount</MenuItem>
+                      <MenuItem value="change-amount">Change by Amount</MenuItem>
+                      <MenuItem value="change-pct">Change by Percentage</MenuItem>
+                      <MenuItem value="set-column">Set to Another Column</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <TextField
+                    size="small"
+                    placeholder="Value"
+                    disabled
+                    sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: "6px", fontSize: 13 } }}
+                  />
+                  <IconButton size="small" sx={{ color: "rgba(0,0,0,0.3)" }}>
+                    <RemoveCircleOutlineIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Box>
+              </Box>
+
+              {/* Bottom Cards */}
+              <Box sx={{ px: 3, pt: 3, pb: 2.5, display: "flex", gap: 2 }}>
+                <Box sx={{ flex: 1, border: "1px dashed rgba(0,0,0,0.15)", borderRadius: "8px", p: 2, display: "flex", alignItems: "center", gap: 1.5, cursor: "pointer", "&:hover": { borderColor: "rgba(0,0,0,0.3)", bgcolor: "rgba(0,0,0,0.01)" } }}>
+                  <Box sx={{ width: 32, height: 32, borderRadius: "50%", bgcolor: "#e3f2fd", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <AddIcon sx={{ fontSize: 18, color: "#1976d2" }} />
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#333" }}>Additional Mass Action</Typography>
+                    <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>Add another action to apply</Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ flex: 1, border: "1px solid rgba(0,0,0,0.1)", borderRadius: "8px", p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#333" }}>Mark Rows Complete</Typography>
+                    <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>Mark affected rows as complete</Typography>
+                  </Box>
+                  <Switch size="small" />
+                </Box>
+                <Box sx={{ flex: 1, border: "1px solid rgba(0,0,0,0.1)", borderRadius: "8px", p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#333" }}>Include Selections</Typography>
+                    <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>Apply to selected rows only</Typography>
+                  </Box>
+                  <Switch size="small" defaultChecked color="success" />
+                </Box>
+              </Box>
+
+              {/* Footer */}
+              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5, px: 3, py: 2, borderTop: "1px solid rgba(0,0,0,0.08)", bgcolor: "#f8f9fa" }}>
+                <Button onClick={() => { setMassActionOpen(false); setMassActionStep(1); }} sx={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", color: "rgba(0,0,0,0.5)", letterSpacing: "0.05em" }}>
+                  Cancel
+                </Button>
+                <Button variant="contained" onClick={() => setMassActionStep(2)} sx={{ bgcolor: "#D97C14", fontSize: 12, fontWeight: 600, textTransform: "uppercase", borderRadius: "6px", px: 3, letterSpacing: "0.05em", "&:hover": { bgcolor: "#c06a0a" } }}>
+                  Review Changes
+                </Button>
+              </Box>
+            </>
+          ) : (
+            <>
+              {/* Step 2: Review Affected Rows */}
+              <Box sx={{ px: 3, pt: 2, pb: 1 }}>
+                <Button onClick={() => setMassActionStep(1)} startIcon={<ChevronLeftIcon sx={{ fontSize: 18 }} />} sx={{ fontSize: 13, fontWeight: 600, color: "#333", textTransform: "none", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "20px", px: 2, py: 0.5, mb: 2, "&:hover": { bgcolor: "rgba(0,0,0,0.03)" } }}>
+                  Edit Mass Action
+                </Button>
+                <Typography sx={{ fontSize: 16, fontWeight: 700, color: "#333", mb: 0.5 }}>Review Affected Rows</Typography>
+                <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.5)", mb: 2, lineHeight: 1.5 }}>
+                  You can remove rows you do not want to commit from this mass action by deselecting the checkbox or use the button above to revisit editing this mass action.
+                </Typography>
+              </Box>
+
+              {/* Stat Cards */}
+              <Box sx={{ px: 3, display: "flex", gap: 0 }}>
+                {[
+                  { label: "COUNT OF ROWS", value: selectedRows.size > 0 ? selectedRows.size : 127 },
+                  { label: "TERMINAL ERRORS", value: 0 },
+                  { label: "VALIDATION ERRORS", value: 3 },
+                  { label: "ITEMS REQUIRING APPROVAL", value: selectedRows.size > 0 ? selectedRows.size : 124 },
+                ].map((stat, i) => (
+                  <Box key={i} sx={{ flex: 1, border: "1px solid rgba(0,0,0,0.1)", borderLeft: i === 0 ? "1px solid rgba(0,0,0,0.1)" : "none", p: 2 }}>
+                    <Typography sx={{ fontSize: 10, fontWeight: 600, color: "rgba(0,0,0,0.45)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.5 }}>{stat.label}</Typography>
+                    <Typography sx={{ fontSize: 22, fontWeight: 700, color: "#333" }}>{stat.value}</Typography>
+                  </Box>
+                ))}
+              </Box>
+
+              {/* Review Table */}
+              <Box sx={{ px: 3, pt: 2 }}>
+                <TableContainer sx={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: "4px" }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: "#fafafa" }}>
+                        <TableCell padding="checkbox"><Checkbox size="small" defaultChecked /></TableCell>
+                        <TableCell sx={{ fontSize: 12, fontWeight: 600, color: "rgba(0,0,0,0.6)" }}>Status</TableCell>
+                        <TableCell sx={{ fontSize: 12, fontWeight: 600, color: "rgba(0,0,0,0.6)" }}>Approval Status</TableCell>
+                        <TableCell sx={{ fontSize: 12, fontWeight: 600, color: "rgba(0,0,0,0.6)" }}>Client</TableCell>
+                        <TableCell sx={{ fontSize: 12, fontWeight: 600, color: "rgba(0,0,0,0.6)" }} align="right">Revised Target</TableCell>
+                        <TableCell sx={{ fontSize: 12, fontWeight: 600, color: "rgba(0,0,0,0.6)" }} align="right">Revised Delta</TableCell>
+                        <TableCell sx={{ fontSize: 12, fontWeight: 600, color: "rgba(0,0,0,0.6)" }}>Effective Start</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {[
+                        { status: "Validation Error", client: "Meridian Health Systems", target: "9.0%", delta: "+$25,650", date: "07/01/26" },
+                        { status: "Validation Error", client: "Apex Capital Group", target: "8.5%", delta: "+$12,325", date: "07/01/26" },
+                        { status: "Validation Error", client: "Pacific Rim Industries", target: "7.2%", delta: "+$8,910", date: "07/01/26" },
+                        { status: "Pending", client: "Vanguard Senior Living", target: "10.1%", delta: "+$31,200", date: "07/01/26" },
+                        { status: "Pending", client: "Atlas Industrial Supply", target: "8.8%", delta: "+$15,440", date: "07/01/26" },
+                      ].map((row, i) => (
+                        <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0,0,0,0.02)" } }}>
+                          <TableCell padding="checkbox"><Checkbox size="small" defaultChecked /></TableCell>
+                          <TableCell>
+                            <Chip
+                              label={row.status}
+                              size="small"
+                              sx={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                height: 22,
+                                bgcolor: row.status === "Validation Error" ? "#fff3e0" : "#e8f5e9",
+                                color: row.status === "Validation Error" ? "#e65100" : "#2e7d32",
+                                "& .MuiChip-label": { px: 1 },
+                              }}
+                              icon={<Box component="span" sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: row.status === "Validation Error" ? "#e65100" : "#2e7d32", ml: 1 }} />}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label="Requires Approval"
+                              size="small"
+                              sx={{ fontSize: 11, height: 22, bgcolor: "transparent", color: "#c62828", border: "1px solid #ffcdd2", "& .MuiChip-label": { px: 1 } }}
+                              icon={<Box component="span" sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#c62828", ml: 1 }} />}
+                            />
+                          </TableCell>
+                          <TableCell sx={{ fontSize: 12, color: "#333" }}>{row.client}</TableCell>
+                          <TableCell sx={{ fontSize: 12, color: "#333", fontFamily: "monospace" }} align="right">{row.target}</TableCell>
+                          <TableCell sx={{ fontSize: 12, color: "#333", fontFamily: "monospace" }} align="right">{row.delta}</TableCell>
+                          <TableCell sx={{ fontSize: 12, color: "#333" }}>{row.date}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 2, py: 1, fontSize: 12, color: "rgba(0,0,0,0.5)" }}>
+                  <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,0.5)" }}>Rows per page: 50</Typography>
+                  <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,0.5)" }}>1–5 of {selectedRows.size > 0 ? selectedRows.size : 127}</Typography>
+                </Box>
+              </Box>
+
+              {/* Footer */}
+              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5, px: 3, py: 2, borderTop: "1px solid rgba(0,0,0,0.08)", bgcolor: "#f8f9fa" }}>
+                <Button onClick={() => { setMassActionOpen(false); setMassActionStep(1); }} sx={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", color: "rgba(0,0,0,0.5)", letterSpacing: "0.05em" }}>
+                  Cancel
+                </Button>
+                <Button variant="contained" onClick={() => { setMassActionOpen(false); setMassActionStep(1); }} sx={{ bgcolor: "#D97C14", fontSize: 12, fontWeight: 600, textTransform: "uppercase", borderRadius: "6px", px: 3, letterSpacing: "0.05em", "&:hover": { bgcolor: "#c06a0a" } }}>
+                  Submit Mass Action
+                </Button>
+              </Box>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </AppShell>
