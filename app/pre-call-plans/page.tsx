@@ -63,7 +63,7 @@ interface PlanRow {
 }
 
 const PLANS: PlanRow[] = [
-  { id: 1, customer: "Cornerstone Financial", partner: "Cathryn Greene", status: "draft", posture: "Balanced approach", priceCount: 19, avgIncrease: 3.5, totalRevenue: 2_450_000, revenueImpact: 85_750, lastModified: "Jun 3, 2026", createdBy: "Cathryn Greene" },
+  { id: 1, customer: "Meridian Health Systems", partner: "Cathryn Greene", status: "draft", posture: "Balanced approach", priceCount: 3, avgIncrease: 9.5, totalRevenue: 500_000, revenueImpact: 53_750, lastModified: "Jun 3, 2026", createdBy: "Cathryn Greene" },
   { id: 2, customer: "NovaTech Industries", partner: "Cathryn Greene", status: "sent", posture: "Moderately aggressive", priceCount: 78, avgIncrease: 5.2, totalRevenue: 1_870_000, revenueImpact: 97_240, lastModified: "Jun 1, 2026", createdBy: "Cathryn Greene" },
   { id: 3, customer: "Meridian Supply Co.", partner: "James Holden", status: "accepted", posture: "Lean conservative", priceCount: 42, avgIncrease: 2.1, totalRevenue: 980_000, revenueImpact: 20_580, lastModified: "May 29, 2026", createdBy: "James Holden" },
   { id: 4, customer: "Pinnacle Group", partner: "Cathryn Greene", status: "finalized", posture: "Balanced approach", priceCount: 156, avgIncrease: 4.0, totalRevenue: 3_200_000, revenueImpact: 128_000, lastModified: "May 27, 2026", createdBy: "Cathryn Greene" },
@@ -191,7 +191,7 @@ export default function PreCallPlansPage() {
                   <TableCell sx={headCellSx}>Partner</TableCell>
                   <TableCell sx={headCellSx}>Status</TableCell>
                   <TableCell sx={headCellSx}>Posture</TableCell>
-                  <TableCell sx={{ ...headCellSx, textAlign: "right" }}>Prices</TableCell>
+                  <TableCell sx={{ ...headCellSx, textAlign: "right" }}>Engagements</TableCell>
                   <TableCell sx={{ ...headCellSx, textAlign: "right" }}>Avg increase</TableCell>
                   <TableCell sx={{ ...headCellSx, textAlign: "right" }}>Total revenue</TableCell>
                   <TableCell sx={{ ...headCellSx, textAlign: "right" }}>Revenue impact</TableCell>

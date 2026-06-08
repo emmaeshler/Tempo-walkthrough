@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import WalkthroughShell from "../components/ModelWalkthrough/WalkthroughShell";
 
 export const metadata: Metadata = {
   title: "Insight2Profit - Drive Applications",
@@ -19,7 +20,9 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <WalkthroughShell>{children}</WalkthroughShell>
+      </body>
     </html>
   );
 }

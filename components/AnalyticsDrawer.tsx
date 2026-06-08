@@ -567,7 +567,7 @@ function resolveFlowKey(text: string): string | null {
 let msgId = 0;
 function nextId() { return `amsg-${++msgId}`; }
 
-export default function AnalyticsDrawer({ clientName, projectName, data }: { clientName: string; projectName: string; data: RowData[] }) {
+export default function AnalyticsDrawer({ clientName, projectName, data, preloadFlow }: { clientName: string; projectName: string; data: RowData[]; preloadFlow?: string }) {
   const charts = useMemo(() => buildChartData(data), [data]);
   const metrics = useMemo(() => buildMetrics(data), [data]);
   const flows = useMemo(() => buildFlows(charts, metrics), [charts, metrics]);
@@ -585,6 +585,34 @@ export default function AnalyticsDrawer({ clientName, projectName, data }: { cli
   const [wasComparison, setWasComparison] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const pendingFlowKeyRef = useRef<string | null>(null);
+  const preloadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!preloadFlow || preloadedRef.current) return;
+    preloadedRef.current = true;
+    const flow = flows[preloadFlow];
+    if (!flow) return;
+    setIsThinking(true);
+    setThinkingMessage("Analyzing portfolio with ML-driven insights...");
+    const t = setTimeout(() => {
+      const { primary } = buildSuggestions(preloadFlow as ChartKind, false);
+      setMessages((prev) => [
+        ...prev,
+        { id: nextId(), role: "user", content: "Show me how the model analyzes this portfolio" },
+        {
+          ...flow.response,
+          id: nextId(),
+          role: "assistant",
+          content: `Because the ML model trains on **real transaction history**, market signals, and feedback loops, it can surface patterns no static analysis would catch.\n\n${flow.response.content}`,
+          suggestions: primary,
+        },
+      ]);
+      setIsThinking(false);
+      setThinkingMessage(undefined);
+      setLastTopic(preloadFlow as ChartKind);
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [preloadFlow, flows]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

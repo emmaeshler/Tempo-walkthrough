@@ -42,9 +42,19 @@ import {
   CheckCircle as CheckCircleIcon,
   Insights as InsightsIcon,
   InfoOutlined as InfoOutlinedIcon,
+  Timeline as TimelineIcon,
 } from "@mui/icons-material";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from "recharts";
 import AppShell from "../components/AppShell";
 import { generateTableData, type RowData } from "./data";
 import AnalyticsDrawer from "../components/AnalyticsDrawer";
@@ -252,7 +262,7 @@ const bodyCellSx = {
 };
 
 const AI_SUGGESTIONS = [
-  "Select at-risk renewal items",
+  "Review Meridian Health Systems",
   "Select all Needs Review items",
   "Sort by revised impact descending",
   "Filter to Gold retention clients",
@@ -261,8 +271,31 @@ const AI_SUGGESTIONS = [
 interface EtpSuggestion { label: string; inputText: string; flowKey: string }
 interface EtpMsg { id: string; role: "user" | "assistant"; content: string; title?: string; suggestions?: EtpSuggestion[] }
 
-function renderBold(text: string): React.ReactNode[] {
-  return text.split(/\*\*(.*?)\*\*/g).map((part, i) => i % 2 === 1 ? <strong key={i}>{part}</strong> : part);
+const HL_STYLE: React.CSSProperties = { backgroundColor: "rgba(217,124,20,0.18)", boxShadow: "0 0 0 3px rgba(217,124,20,0.18)", borderRadius: 3, padding: "1px 0" };
+
+function renderBold(text: string, highlights?: string[]): React.ReactNode[] {
+  const stripped = text.replace(/\*\*/g, "");
+  const parts = text.split(/\*\*(.*?)\*\*/g);
+  return parts.map((part, i) => {
+    const isBold = i % 2 === 1;
+    const shouldHighlight = highlights?.some((h) => stripped.includes(h) && part.includes(h.slice(0, 20)));
+    if (isBold && shouldHighlight) return <strong key={i}><span style={HL_STYLE}>{part}</span></strong>;
+    if (isBold) return <strong key={i}>{part}</strong>;
+    if (!highlights?.length) return part;
+    let result: React.ReactNode[] = [part];
+    for (const h of highlights) {
+      const next: React.ReactNode[] = [];
+      for (const seg of result) {
+        if (typeof seg !== "string" || !seg.includes(h)) { next.push(seg); continue; }
+        const idx = seg.indexOf(h);
+        if (idx > 0) next.push(seg.slice(0, idx));
+        next.push(<span key={`hl-${i}-${idx}`} style={HL_STYLE}>{h}</span>);
+        if (idx + h.length < seg.length) next.push(seg.slice(idx + h.length));
+      }
+      result = next;
+    }
+    return result;
+  });
 }
 
 const etpFlows: Record<string, { thinkingDelay: number; thinkingMessage?: string; response: Omit<EtpMsg, "id" | "role"> }> = {
@@ -350,6 +383,137 @@ const initialEtpMsg: EtpMsg = {
   ],
 };
 
+const complicationEtpMsg: EtpMsg = {
+  id: "etp-complication",
+  role: "assistant",
+  title: "Alert: Market Signal Detected",
+  content: "⚠️ **Win rate in Audit & Assurance has shifted -12% this quarter.** The model detected competitive pressure impacting pricing in this segment.\n\nThe recommended price has been adjusted from **$465,000 to $452,000** to maintain competitiveness while protecting margins.\n\nThis adjustment reflects real-time market signals — not a blanket correction. The model identified 3 competing bids in the last 60 days that were 8–15% below our previous recommendation.",
+  suggestions: [
+    { label: "Get Internal Explanation", inputText: "Get internal explanation", flowKey: "internal-explanation" },
+    { label: "Anticipate Objections", inputText: "Anticipate objections", flowKey: "anticipate-objections" },
+    { label: "Show Similar Engagements", inputText: "Show similar engagements", flowKey: "similar-engagements" },
+  ],
+};
+
+const priceHistoryData = [
+  { date: "Q1 2024", price: 395000, annotation: null as string | null },
+  { date: "Q2 2024", price: 395000, annotation: null as string | null },
+  { date: "Q3 2024", price: 418000, annotation: "Scope expansion +5.8%" },
+  { date: "Q4 2024", price: 418000, annotation: null as string | null },
+  { date: "Q1 2025", price: 430000, annotation: "Market rate adjustment" },
+  { date: "Q2 2025", price: 430000, annotation: null as string | null },
+  { date: "Q3 2025", price: 445000, annotation: "Model recommendation" },
+  { date: "Q4 2025", price: 445000, annotation: null as string | null },
+  { date: "Q1 2026", price: 465000, annotation: "Annual review +4.5%" },
+  { date: "Q2 2026", price: 452000, annotation: "Competitive pressure -2.8%" },
+];
+
+const recHistoryData = [
+  { period: "Q3 2024", recommended: 425000, accepted: 418000, status: "Overridden" as const, reason: "Partner reduced for relationship" },
+  { period: "Q1 2025", recommended: 435000, accepted: 430000, status: "Overridden" as const, reason: "Client pushed back on scope" },
+  { period: "Q3 2025", recommended: 445000, accepted: 445000, status: "Accepted" as const, reason: "" },
+  { period: "Q1 2026", recommended: 465000, accepted: 465000, status: "Accepted" as const, reason: "" },
+  { period: "Q2 2026", recommended: 452000, accepted: 0, status: "Pending" as const, reason: "" },
+];
+
+const recStatusColors: Record<string, { bg: string; color: string }> = {
+  Accepted: { bg: "#e8f5e9", color: "#2e7d32" },
+  Overridden: { bg: "#fff3e0", color: "#e65100" },
+  Pending: { bg: "#f5f5f5", color: "#757575" },
+};
+
+function PriceHistoryView() {
+  return (
+    <Box sx={{ p: 2 }}>
+      <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#00446a", mb: 0.5 }}>Price History</Typography>
+      <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,0.5)", mb: 2 }}>Engagement fee over time with change annotations</Typography>
+      <ResponsiveContainer width="100%" height={220}>
+        <LineChart data={priceHistoryData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="date" fontSize={10} tick={{ fill: "rgba(0,0,0,0.5)" }} angle={-45} textAnchor="end" height={50} />
+          <YAxis fontSize={10} tick={{ fill: "rgba(0,0,0,0.5)" }} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}K`} domain={["dataMin - 20000", "dataMax + 20000"]} width={55} />
+          <RechartsTooltip contentStyle={{ fontSize: 11, borderRadius: 6 }} formatter={(value) => [`$${Number(value).toLocaleString("en-US")}`, "Fee"]} />
+          <Line
+            type="monotone"
+            dataKey="price"
+            stroke="#00446a"
+            strokeWidth={2.5}
+            dot={(props: Record<string, unknown>) => {
+              const idx = props.index as number;
+              const entry = priceHistoryData[idx];
+              const hasAnnotation = entry?.annotation;
+              return (
+                <circle key={idx} cx={props.cx as number} cy={props.cy as number} r={hasAnnotation ? 6 : 4} fill={hasAnnotation ? "#f08b1d" : "#00446a"} stroke="white" strokeWidth={hasAnnotation ? 2 : 0} />
+              );
+            }}
+            activeDot={{ r: 6 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+      <Box sx={{ mt: 1.5, display: "flex", flexDirection: "column", gap: 0.75 }}>
+        {priceHistoryData.filter((d) => d.annotation).map((d, i) => (
+          <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#f08b1d", flexShrink: 0 }} />
+            <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.6)" }}><strong>{d.date}</strong>: {d.annotation}</Typography>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
+function RecHistoryView() {
+  return (
+    <Box sx={{ p: 2 }}>
+      <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#00446a", mb: 0.5 }}>Recommendation History</Typography>
+      <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,0.5)", mb: 2 }}>Model recommendations vs. accepted prices</Typography>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        {recHistoryData.map((entry, i) => {
+          const sc = recStatusColors[entry.status];
+          const delta = entry.status !== "Pending" ? entry.accepted - entry.recommended : null;
+          return (
+            <Paper key={i} elevation={0} sx={{ p: 1.5, border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", borderLeft: `3px solid ${sc.color}` }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#333" }}>{entry.period}</Typography>
+                <Box sx={{ px: 1, py: 0.25, borderRadius: "4px", bgcolor: sc.bg }}>
+                  <Typography sx={{ fontSize: 10, fontWeight: 600, color: sc.color }}>{entry.status}</Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.4)" }}>Recommended</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#00446a" }}>${entry.recommended.toLocaleString("en-US")}</Typography>
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.4)" }}>{entry.status === "Pending" ? "Pending" : "Accepted"}</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: entry.status === "Pending" ? "rgba(0,0,0,0.3)" : "#333" }}>
+                    {entry.status === "Pending" ? "---" : `$${entry.accepted.toLocaleString("en-US")}`}
+                  </Typography>
+                </Box>
+                {delta !== null && (
+                  <Box>
+                    <Typography sx={{ fontSize: 10, color: "rgba(0,0,0,0.4)" }}>Variance</Typography>
+                    <Typography sx={{ fontSize: 13, fontWeight: 500, color: delta === 0 ? "#2e7d32" : "#e65100" }}>
+                      {delta === 0 ? "Exact match" : `$${delta.toLocaleString("en-US")}`}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+              {entry.reason && <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.45)", mt: 0.75, fontStyle: "italic" }}>{entry.reason}</Typography>}
+            </Paper>
+          );
+        })}
+      </Box>
+      <Paper elevation={0} sx={{ mt: 2, p: 1.5, bgcolor: "rgba(46,125,50,0.06)", border: "1px solid rgba(46,125,50,0.2)", borderRadius: "8px" }}>
+        <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#2e7d32", mb: 0.5 }}>Model Convergence</Typography>
+        <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.6)", lineHeight: 1.6 }}>
+          The model&apos;s recommendations have been accepted without override for the last 2 cycles, indicating improved alignment with partner judgment and market conditions.
+        </Typography>
+      </Paper>
+    </Box>
+  );
+}
+
 export default function PriceReviewPage() {
   const router = useRouter();
   const [page, setPage] = useState(0);
@@ -363,12 +527,16 @@ export default function PriceReviewPage() {
   const paginatedData = tableData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const [drawerOpenRow, setDrawerOpenRow] = useState<number | null>(null);
-  const [activeDrawerTab, setActiveDrawerTab] = useState<"analytics" | "details" | "explain" | "comments">("explain");
+  const [activeDrawerTab, setActiveDrawerTab] = useState<"analytics" | "details" | "explain" | "comments" | "decision-support">("explain");
+  const [decisionSupportView, setDecisionSupportView] = useState<"price-history" | "rec-history">("price-history");
   const [etpMessages, setEtpMessages] = useState<EtpMsg[]>([initialEtpMsg]);
   const [etpThinking, setEtpThinking] = useState(false);
   const [etpThinkingMsg, setEtpThinkingMsg] = useState<string | undefined>();
   const etpBottomRef = useRef<HTMLDivElement>(null);
   const etpMsgIdRef = useRef(0);
+  const complicationPreloadRef = useRef(false);
+  const [analyticsPreload, setAnalyticsPreload] = useState<string | undefined>();
+  const [activeTourStep, setActiveTourStep] = useState<number | null>(null);
 
   const drawerRow = drawerOpenRow !== null ? tableData[drawerOpenRow] : null;
 
@@ -377,9 +545,47 @@ export default function PriceReviewPage() {
   }, [etpMessages, etpThinking]);
 
   useEffect(() => {
+    if (complicationPreloadRef.current) {
+      complicationPreloadRef.current = false;
+      return;
+    }
     setEtpMessages([initialEtpMsg]);
     setEtpThinking(false);
     etpMsgIdRef.current = 0;
+  }, [drawerOpenRow]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) {
+        setActiveTourStep(null);
+        if (drawerOpenRow !== null) setDrawerOpenRow(null);
+        return;
+      }
+      setActiveTourStep(detail.step ?? null);
+      if (detail.action === "open-drawer-price-history") {
+        setDrawerOpenRow(0);
+        setActiveDrawerTab("decision-support");
+        setDecisionSupportView("price-history");
+      } else if (detail.action === "open-drawer-explain-complication") {
+        complicationPreloadRef.current = true;
+        setDrawerOpenRow(0);
+        setActiveDrawerTab("explain");
+        setEtpMessages([complicationEtpMsg]);
+        setEtpThinking(false);
+        etpMsgIdRef.current = 1;
+      } else if (detail.action === "open-drawer-analytics") {
+        setDrawerOpenRow(0);
+        setActiveDrawerTab("analytics");
+        setAnalyticsPreload("impact-by-service");
+      } else if (detail.action === "open-drawer-rec-history") {
+        setDrawerOpenRow(0);
+        setActiveDrawerTab("decision-support");
+        setDecisionSupportView("rec-history");
+      }
+    };
+    window.addEventListener("tour-step", handler);
+    return () => window.removeEventListener("tour-step", handler);
   }, [drawerOpenRow]);
 
   const handleEtpChip = (chip: EtpSuggestion) => {
@@ -397,7 +603,7 @@ export default function PriceReviewPage() {
     }, flow.thinkingDelay);
   };
 
-  const totalMinWidth = columns.reduce((sum, c) => sum + c.width, 0) + 80;
+  const totalMinWidth = columns.reduce((sum, c) => sum + c.width, 0) + 100;
 
   const toggleRow = (globalIdx: number) => {
     setSelectedRows((prev) => {
@@ -421,21 +627,20 @@ export default function PriceReviewPage() {
   const handleAiSubmit = (text: string) => {
     if (!text.trim()) return;
     const q = text.toLowerCase();
-    const isSelectQuery = q.includes("select") || q.includes("at-risk") || q.includes("bundle") || q.includes("check");
+    const isMeridianQuery = q.includes("meridian") || q.includes("select") || q.includes("at-risk") || q.includes("review") || q.includes("bundle") || q.includes("check");
     setAiMessages((prev) => [...prev, { role: "user", text }]);
     setAiQuery("");
     setAiState("thinking");
     setTimeout(() => {
-      if (isSelectQuery) {
-        const atRiskIndices = tableData
-          .map((row, i) => (row.clientRenewalStatus === "At Risk" || row.status === "Needs Review") ? i : -1)
-          .filter((i) => i !== -1)
-          .slice(0, 8);
-        setSelectedRows(new Set(atRiskIndices));
-        const clientNames = [...new Set(atRiskIndices.map((i) => tableData[i].clientName))];
+      if (isMeridianQuery) {
+        const meridianIndices = tableData
+          .map((row, i) => row.clientName === "Meridian Health Systems" ? i : -1)
+          .filter((i) => i !== -1);
+        setSelectedRows(new Set(meridianIndices));
+        const engagements = meridianIndices.map((i) => tableData[i].projectName);
         setAiMessages((prev) => [
           ...prev,
-          { role: "ai", text: `Selected ${atRiskIndices.length} items across ${clientNames.length} clients:\n\n${clientNames.map((c) => `• ${c}`).join("\n")}\n\nUse "Open Items in Pre-Call Plan" in the toolbar to continue.` },
+          { role: "ai", text: `Selected ${meridianIndices.length} engagements for Meridian Health Systems:\n\n${engagements.map((e) => `• ${e}`).join("\n")}\n\nTotal relationship value: $500,000. Use "Open Items in Pre-Call Plan" in the toolbar to prepare your strategy.` },
         ]);
       } else {
         setAiMessages((prev) => [
@@ -472,7 +677,7 @@ export default function PriceReviewPage() {
           </Box>
 
           {/* KPI Cards */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 3, py: 2 }}>
+          <Box data-tour="kpi-cards" sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 3, py: 2 }}>
             <IconButton sx={{ width: 27, height: 63, borderRadius: "6px", bgcolor: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.12)", flexShrink: 0, "&:hover": { bgcolor: "rgba(0,0,0,0.08)" } }}>
               <ChevronLeftIcon sx={{ fontSize: 16, color: "#00446a" }} />
             </IconButton>
@@ -547,7 +752,7 @@ export default function PriceReviewPage() {
           </Box>
 
           {/* Table */}
-          <TableContainer component={Paper} elevation={0} sx={{ flex: 1, mx: 3, bgcolor: "white", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.08)", overflow: "auto" }}>
+          <TableContainer data-tour="data-table" component={Paper} elevation={0} sx={{ flex: 1, mx: 3, bgcolor: "white", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.08)", overflow: "auto" }}>
             <Table size="small" stickyHeader sx={{ minWidth: totalMinWidth }}>
               <TableHead>
                 <TableRow>
@@ -578,7 +783,7 @@ export default function PriceReviewPage() {
                       <Checkbox size="small" sx={{ p: 0, color: isSelected ? "#00446a" : undefined, "&.Mui-checked": { color: "#00446a" } }} checked={isSelected} onChange={() => toggleRow(globalIdx)} />
                     </TableCell>
                     <TableCell sx={{ ...bodyCellSx, width: 38, minWidth: 38 }}>
-                      <AddCircleOutlineIcon onClick={() => { setDrawerOpenRow(drawerOpenRow === globalIdx ? null : globalIdx); setActiveDrawerTab("explain"); }} sx={{ fontSize: 20, color: drawerOpenRow === globalIdx ? "#00446a" : "rgba(0,0,0,0.4)", cursor: "pointer" }} />
+                      <AddCircleOutlineIcon onClick={() => { setDrawerOpenRow(drawerOpenRow === globalIdx ? null : globalIdx); setActiveDrawerTab("explain"); setAnalyticsPreload(undefined); }} sx={{ fontSize: 20, color: drawerOpenRow === globalIdx ? "#00446a" : "rgba(0,0,0,0.4)", cursor: "pointer" }} />
                     </TableCell>
                     {columns.map((col) => (
                       <TableCell key={col.key} align={col.align || "left"} sx={bodyCellSx}>
@@ -754,12 +959,13 @@ export default function PriceReviewPage() {
 
         {/* Right-side Decision Support Drawer */}
         {drawerOpenRow !== null && drawerRow && (
-          <Box sx={{ display: "flex", flexShrink: 0, height: "100%" }}>
+          <Box data-tour="drawer" sx={{ display: "flex", flexShrink: 0, height: "100%" }}>
             {/* Icon tab strip */}
             <Box sx={{ width: 44, bgcolor: "white", borderLeft: "1px solid rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", alignItems: "center", pt: 1.5, gap: 0.5 }}>
               {([
                 { key: "explain" as const, icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} />, tooltip: "Explain The Price" },
                 { key: "analytics" as const, icon: <InsightsIcon sx={{ fontSize: 20 }} />, tooltip: "AI Analytics" },
+                { key: "decision-support" as const, icon: <TimelineIcon sx={{ fontSize: 20 }} />, tooltip: "Price History" },
                 { key: "details" as const, icon: <InfoOutlinedIcon sx={{ fontSize: 20 }} />, tooltip: "Engagement Details" },
                 { key: "comments" as const, icon: <ChatBubbleOutlineIcon sx={{ fontSize: 20 }} />, tooltip: "Comments" },
               ]).map((tab) => (
@@ -787,7 +993,7 @@ export default function PriceReviewPage() {
               {/* Drawer header */}
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2.5, py: 1.5, borderBottom: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
                 <Typography sx={{ fontSize: 16, fontWeight: 600, color: "#333" }}>
-                  {activeDrawerTab === "analytics" ? "Decision Support" : activeDrawerTab === "details" ? "Engagement Details" : activeDrawerTab === "explain" ? "Explain The Price" : "Comments"}
+                  {activeDrawerTab === "analytics" ? "AI Analytics" : activeDrawerTab === "decision-support" ? "Price History" : activeDrawerTab === "details" ? "Engagement Details" : activeDrawerTab === "explain" ? "Explain The Price" : "Comments"}
                 </Typography>
                 <IconButton size="small" onClick={() => setDrawerOpenRow(null)} sx={{ color: "rgba(0,0,0,0.4)" }}>
                   <CloseIcon sx={{ fontSize: 20 }} />
@@ -795,10 +1001,67 @@ export default function PriceReviewPage() {
               </Box>
 
               {/* Tab content */}
-              <Box sx={{ flex: 1, overflowY: "auto" }}>
+              <Box
+                key={activeDrawerTab}
+                sx={{
+                  flex: 1,
+                  overflowY: "auto",
+                  animation: "drawerTabIn 0.3s ease",
+                  "@keyframes drawerTabIn": {
+                    from: { opacity: 0, transform: "translateY(6px)" },
+                    to: { opacity: 1, transform: "translateY(0)" },
+                  },
+                }}
+              >
                 {/* Analytics Tab — Interactive Chart Drawer */}
                 {activeDrawerTab === "analytics" && (
-                  <AnalyticsDrawer key={drawerOpenRow} clientName={drawerRow.clientName} projectName={drawerRow.projectName} data={tableData} />
+                  <AnalyticsDrawer key={`${drawerOpenRow}-${analyticsPreload || ""}`} clientName={drawerRow.clientName} projectName={drawerRow.projectName} data={tableData} preloadFlow={analyticsPreload} />
+                )}
+
+                {/* Decision Support Tab */}
+                {activeDrawerTab === "decision-support" && (
+                  <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                    <Box sx={{ display: "flex", borderBottom: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
+                      {([
+                        { key: "price-history" as const, label: "Price History" },
+                        { key: "rec-history" as const, label: "Recommendations" },
+                      ]).map((sv) => (
+                        <Box
+                          key={sv.key}
+                          onClick={() => setDecisionSupportView(sv.key)}
+                          sx={{
+                            flex: 1,
+                            py: 1.25,
+                            textAlign: "center",
+                            cursor: "pointer",
+                            borderBottom: decisionSupportView === sv.key ? "2px solid #00446a" : "2px solid transparent",
+                            color: decisionSupportView === sv.key ? "#00446a" : "rgba(0,0,0,0.4)",
+                            fontWeight: decisionSupportView === sv.key ? 600 : 400,
+                            fontSize: 12,
+                            fontFamily: "Inter, sans-serif",
+                            transition: "all 0.15s ease",
+                            "&:hover": { color: "#00446a", bgcolor: "rgba(0,68,106,0.04)" },
+                          }}
+                        >
+                          {sv.label}
+                        </Box>
+                      ))}
+                    </Box>
+                    <Box
+                      key={decisionSupportView}
+                      sx={{
+                        flex: 1,
+                        overflowY: "auto",
+                        animation: "drawerContentIn 0.35s ease",
+                        "@keyframes drawerContentIn": {
+                          from: { opacity: 0, transform: "translateY(8px)" },
+                          to: { opacity: 1, transform: "translateY(0)" },
+                        },
+                      }}
+                    >
+                      {decisionSupportView === "price-history" ? <PriceHistoryView /> : <RecHistoryView />}
+                    </Box>
+                  </Box>
                 )}
 
                 {/* Engagement Details Tab */}
@@ -877,7 +1140,7 @@ export default function PriceReviewPage() {
                         <Box key={msg.id} sx={{ mb: 1.5, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start" }}>
                           <Box sx={{ maxWidth: "90%", px: 1.75, py: 1.25, borderRadius: msg.role === "user" ? "12px 12px 2px 12px" : "12px 12px 12px 2px", bgcolor: msg.role === "user" ? "#00446a" : "rgba(0,0,0,0.04)", color: msg.role === "user" ? "white" : "#333" }}>
                             {msg.title && <Typography sx={{ fontSize: 12, fontWeight: 700, color: msg.role === "user" ? "rgba(255,255,255,0.7)" : "#00446a", mb: 0.5 }}>{msg.title}</Typography>}
-                            <Typography sx={{ fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-line" }}>{renderBold(msg.content)}</Typography>
+                            <Typography sx={{ fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-line" }}>{renderBold(msg.content, activeTourStep === 4 ? ["Win rate in Audit & Assurance has shifted -12% this quarter."] : activeTourStep === 5 ? ["The model identified 3 competing bids in the last 60 days that were 8–15% below our previous recommendation."] : undefined)}</Typography>
                           </Box>
                         </Box>
                       ))}

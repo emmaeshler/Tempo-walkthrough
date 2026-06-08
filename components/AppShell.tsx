@@ -14,6 +14,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
 import Avatar from "@mui/material/Avatar";
+import Tooltip from "@mui/material/Tooltip";
 import MenuIcon from "@mui/icons-material/Menu";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -21,6 +22,8 @@ import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AppsIcon from "@mui/icons-material/Apps";
+import SlideshowIcon from "@mui/icons-material/Slideshow";
+import { useWalkthrough } from "./ModelWalkthrough/WalkthroughContext";
 
 const DRAWER_WIDTH = 340;
 
@@ -39,6 +42,17 @@ function Logo({ size = 20 }: { size?: number }) {
       <rect x={0} y={half + gap} width={half - gap} height={half - gap} fill="#1e2a3a" />
       <rect x={half + gap} y={half + gap} width={half - gap} height={half - gap} fill="#d4712a" />
     </svg>
+  );
+}
+
+function WalkthroughTrigger() {
+  const { open } = useWalkthrough();
+  return (
+    <Tooltip title="Model Walkthrough" arrow>
+      <IconButton onClick={open} size="small" sx={{ color: "#666" }}>
+        <SlideshowIcon fontSize="small" />
+      </IconButton>
+    </Tooltip>
   );
 }
 
@@ -93,6 +107,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           >
             INSIGHT2PROFIT
           </Typography>
+        </Box>
+        <Box sx={{ ml: "auto" }}>
+          <WalkthroughTrigger />
         </Box>
       </Box>
 
