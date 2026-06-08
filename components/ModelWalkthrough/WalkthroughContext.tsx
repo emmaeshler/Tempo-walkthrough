@@ -13,7 +13,7 @@ interface WalkthroughState {
   goToStep: (step: number) => void;
 }
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
 
 const WalkthroughContext = createContext<WalkthroughState | null>(null);
 

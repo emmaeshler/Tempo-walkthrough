@@ -65,8 +65,10 @@ export default function WalkthroughOverlay() {
       router.push(url);
     } else {
       setNavigating(false);
-      const t = setTimeout(measureTarget, 250);
-      return () => clearTimeout(t);
+      const t1 = setTimeout(measureTarget, 250);
+      const t2 = setTimeout(measureTarget, 600);
+      const t3 = setTimeout(measureTarget, 1200);
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     }
   }, [currentStep, isOpen, step, pathname, router, measureTarget]);
 

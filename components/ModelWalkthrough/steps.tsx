@@ -99,6 +99,56 @@ function VisualMLvsGenAI() {
   );
 }
 
+/* ── 3b. Review & Revise — user revises model recommendations ── */
+function VisualReviewRevise() {
+  const rows = [
+    { name: "Meridian Health", rec: "9.0%", revised: "9.0%", status: "Complete", match: true },
+    { name: "Summit HC Group", rec: "10.0%", revised: "8.5%", status: "Revised", match: false },
+    { name: "Pinnacle Brands", rec: "10.0%", revised: "10.0%", status: "Complete", match: true },
+  ];
+  return (
+    <svg viewBox="0 0 340 155">
+      {/* Header row */}
+      <rect x="5" y="5" width="330" height="22" rx="4" fill="#f0f0f0" />
+      <text x="70" y="19" fontSize="8" fill="rgba(0,0,0,0.5)" textAnchor="middle" fontWeight="600">Engagement</text>
+      <text x="162" y="19" fontSize="8" fill="#2e7d32" textAnchor="middle" fontWeight="600">Rec %</text>
+      <text x="225" y="19" fontSize="8" fill={P} textAnchor="middle" fontWeight="600">Revised %</text>
+      <text x="300" y="19" fontSize="8" fill="rgba(0,0,0,0.5)" textAnchor="middle" fontWeight="600">Status</text>
+
+      {/* Data rows */}
+      {rows.map((r, i) => {
+        const y = 35 + i * 32;
+        return (
+          <g key={i}>
+            <rect x="5" y={y} width="330" height="26" rx="3" fill="white" stroke="#eee" strokeWidth="1" />
+            <text x="15" y={y + 16} fontSize="9" fill="#333" fontWeight="500">{r.name}</text>
+            <rect x="140" y={y + 4} width="44" height="18" rx="3" fill="#e8f5e9" />
+            <text x="162" y={y + 16} fontSize="9" fill="#2e7d32" textAnchor="middle" fontWeight="600">{r.rec}</text>
+            <rect x="203" y={y + 4} width="44" height="18" rx="3" fill="#b3e5fc" />
+            <text x="225" y={y + 16} fontSize="9" fill={P} textAnchor="middle" fontWeight="600">{r.revised}</text>
+            <rect x="268" y={y + 4} width="60" height="18" rx="9" fill={r.status === "Complete" ? "#e8f5e9" : "#e3f2fd"} />
+            <text x="298" y={y + 16} fontSize="8" fill={r.status === "Complete" ? "#2e7d32" : "#1565c0"} textAnchor="middle" fontWeight="600">{r.status}</text>
+          </g>
+        );
+      })}
+
+      {/* Arrow showing override */}
+      <line x1="186" y1="53" x2="200" y2="53" stroke={O} strokeWidth="1.5" markerEnd="url(#revArrow)" />
+      <text x="193" y="46" fontSize="7" fill={O} textAnchor="middle" fontWeight="600">✎</text>
+
+      {/* Footer note */}
+      <text x="170" y="138" fontSize="8" fill="rgba(0,0,0,0.35)" textAnchor="middle">Accept, revise, or override — then mark complete</text>
+      <text x="170" y="150" fontSize="7" fill="rgba(0,0,0,0.25)" textAnchor="middle">Approval workflows available when configured</text>
+
+      <defs>
+        <marker id="revArrow" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+          <polygon points="0 0,6 2,0 4" fill={O} />
+        </marker>
+      </defs>
+    </svg>
+  );
+}
+
 /* ── 4. The Model Running — scatter plot showing differentiation ── */
 function VisualModelRunning() {
   const pts: [number, number][] = [
@@ -128,63 +178,90 @@ function VisualModelRunning() {
   );
 }
 
-/* ── 5. Complication ── */
-function VisualComplication() {
-  const stable: [number, number][] = [[35, 85], [55, 75], [75, 80], [100, 65], [125, 68]];
-  const shifted: [number, number][] = [[165, 78], [185, 88], [205, 82], [230, 92], [255, 85]];
+/* ── 5. Decision Support — drill into an engagement ── */
+function VisualDecisionSupport() {
+  const tabs = [
+    { x: 60, icon: "▮", label: "History", color: P, active: true },
+    { x: 130, icon: "↑↓", label: "Recs", color: P, active: false },
+    { x: 200, icon: "i", label: "Details", color: P, active: false },
+    { x: 270, icon: "✦", label: "AI", color: "rgba(0,0,0,0.25)", active: false },
+  ];
   return (
-    <svg viewBox="0 0 310 120">
-      <line x1="25" y1="105" x2="290" y2="105" stroke="#ddd" strokeWidth="1" />
-      {stable.map(([x, y], i) => <circle key={`s${i}`} cx={x} cy={y} r="4.5" fill={O} opacity="0.7" />)}
-      <path d="M35 85 C65 77,95 68,125 65" fill="none" stroke={P} strokeWidth="2" />
+    <svg viewBox="0 0 340 150">
+      {/* Row representation */}
+      <rect x="15" y="8" width="310" height="30" rx="5" fill="white" stroke="#ddd" strokeWidth="1.5" />
+      <circle cx="34" cy="23" r="8" fill={O} opacity="0.15" />
+      <text x="34" y="27" fontSize="10" fill={O} textAnchor="middle" fontWeight="700">+</text>
+      <text x="52" y="27" fontSize="10" fill="rgba(0,0,0,0.6)" fontWeight="500">Meridian Health — Annual Audit FY26</text>
+      <rect x="260" y="14" width="55" height="18" rx="4" fill="rgba(0,68,106,0.08)" />
+      <text x="288" y="27" fontSize="8" fill={P} textAnchor="middle" fontWeight="600">$285K</text>
 
-      <line x1="145" y1="10" x2="145" y2="105" stroke="#c62828" strokeWidth="2" strokeDasharray="5 3" />
+      {/* Arrow down */}
+      <line x1="170" y1="42" x2="170" y2="58" stroke={O} strokeWidth="2" />
+      <polygon points="164,56 170,64 176,56" fill={O} />
 
-      {shifted.map(([x, y], i) => <circle key={`d${i}`} cx={x} cy={y} r="4.5" fill="#c62828" opacity="0.6" />)}
+      {/* Panel */}
+      <rect x="25" y="68" width="290" height="72" rx="8" fill="white" stroke={P} strokeWidth="1.5" />
 
-      <rect x="195" y="10" width="105" height="28" rx="5" fill="#c62828" />
-      <text x="247" y="23" fontSize="9" fill="white" textAnchor="middle" fontWeight="600">&#9888; Signal Detected</text>
-      <text x="247" y="33" fontSize="7" fill="rgba(255,255,255,0.8)" textAnchor="middle">Win rate, competitors, supply</text>
+      {/* Tab icons */}
+      {tabs.map((t) => (
+        <g key={t.label}>
+          <rect x={t.x - 22} y="74" width="44" height="26" rx="5" fill={t.active ? "rgba(217,124,20,0.1)" : "transparent"} stroke={t.active ? O : "transparent"} strokeWidth="1" />
+          <text x={t.x} y="86" fontSize="10" fill={t.active ? O : "rgba(0,0,0,0.3)"} textAnchor="middle" fontWeight="600">{t.icon}</text>
+          <text x={t.x} y="96" fontSize="7" fill={t.active ? O : "rgba(0,0,0,0.3)"} textAnchor="middle" fontWeight="500">{t.label}</text>
+        </g>
+      ))}
+
+      {/* Content lines */}
+      <line x1="40" y1="110" x2="180" y2="110" stroke="rgba(0,0,0,0.08)" strokeWidth="3" strokeLinecap="round" />
+      <line x1="40" y1="118" x2="140" y2="118" stroke="rgba(0,0,0,0.06)" strokeWidth="3" strokeLinecap="round" />
+      <line x1="40" y1="126" x2="160" y2="126" stroke="rgba(0,0,0,0.06)" strokeWidth="3" strokeLinecap="round" />
+
+      {/* Insight callout */}
+      <rect x="200" y="107" width="100" height="26" rx="5" fill={P} opacity="0.08" stroke={P} strokeWidth="1" />
+      <text x="250" y="119" fontSize="8" fill={P} textAnchor="middle" fontWeight="600">Context at hand</text>
+      <text x="250" y="129" fontSize="7" fill={P} textAnchor="middle" opacity="0.7">No digging required</text>
     </svg>
   );
 }
 
-/* ── 6. Lesson + Opportunity — feedback loop ── */
-function VisualFeedbackLoop() {
-  const cx = 150, cy = 65, r = 48;
-  const nodes = [
-    { angle: -90, label: "Detect", color: "#c62828" },
-    { angle: 0, label: "Analyze", color: O },
-    { angle: 90, label: "Retrain", color: P },
-    { angle: 180, label: "Deploy", color: G },
+/* ── 6. AI-Powered vs. Data-Driven ── */
+function VisualAIPowered() {
+  const aiFeatures = [
+    { label: "Explain the Price", sub: "AI narrative" },
+    { label: "AI Analytics", sub: "Interactive chat" },
+  ];
+  const dataFeatures = [
+    { label: "Price History", sub: "Transaction data" },
+    { label: "Engagement Details", sub: "Client facts" },
   ];
   return (
-    <svg viewBox="0 0 310 140">
-      {[0, 1, 2, 3].map((i) => {
-        const a1 = (-90 + i * 90 + 12) * Math.PI / 180;
-        const a2 = (-90 + i * 90 + 68) * Math.PI / 180;
-        return (
-          <path key={i}
-            d={`M${cx + r * Math.cos(a1)} ${cy + r * Math.sin(a1)} A${r} ${r} 0 0 1 ${cx + r * Math.cos(a2)} ${cy + r * Math.sin(a2)}`}
-            fill="none" stroke={nodes[i].color} strokeWidth="2.5" markerEnd="url(#la)" />
-        );
-      })}
-      {nodes.map((n, i) => {
-        const rad = n.angle * Math.PI / 180;
-        const nx = cx + r * Math.cos(rad), ny = cy + r * Math.sin(rad);
-        return (
-          <g key={i}>
-            <circle cx={nx} cy={ny} r="22" fill="white" stroke={n.color} strokeWidth="2" />
-            <text x={nx} y={ny + 4} fontSize="9" fill={n.color} textAnchor="middle" fontWeight="600">{n.label}</text>
-          </g>
-        );
-      })}
-      <text x={cx} y={cy + 3} fontSize="8" fill="rgba(0,0,0,0.25)" textAnchor="middle">Gets smarter</text>
-      <defs>
-        <marker id="la" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
-          <polygon points="0 0,7 2.5,0 5" fill={P} />
-        </marker>
-      </defs>
+    <svg viewBox="0 0 320 145">
+      {/* AI column */}
+      <rect x="10" y="4" width="140" height="22" rx="5" fill={O} />
+      <text x="80" y="19" fontSize="9" fill="white" textAnchor="middle" fontWeight="700">✦ AI-Powered</text>
+      {aiFeatures.map((f, i) => (
+        <g key={`a${i}`}>
+          <rect x="10" y={34 + i * 44} width="140" height="36" rx="6" fill="white" stroke={O} strokeWidth="1.5" />
+          <text x="80" y={50 + i * 44} fontSize="10" fill={O} textAnchor="middle" fontWeight="600">{f.label}</text>
+          <text x="80" y={62 + i * 44} fontSize="8" fill="rgba(0,0,0,0.4)" textAnchor="middle">{f.sub}</text>
+        </g>
+      ))}
+
+      {/* Data column */}
+      <rect x="170" y="4" width="140" height="22" rx="5" fill={P} />
+      <text x="240" y="19" fontSize="9" fill="white" textAnchor="middle" fontWeight="700">Data-Driven</text>
+      {dataFeatures.map((f, i) => (
+        <g key={`d${i}`}>
+          <rect x="170" y={34 + i * 44} width="140" height="36" rx="6" fill="white" stroke={P} strokeWidth="1.5" />
+          <text x="240" y={50 + i * 44} fontSize="10" fill={P} textAnchor="middle" fontWeight="600">{f.label}</text>
+          <text x="240" y={62 + i * 44} fontSize="8" fill="rgba(0,0,0,0.4)" textAnchor="middle">{f.sub}</text>
+        </g>
+      ))}
+
+      {/* Bottom note */}
+      <text x="160" y="132" fontSize="8" fill="rgba(0,0,0,0.35)" textAnchor="middle">Both available on every engagement</text>
+      <line x1="155" y1="116" x2="155" y2="140" stroke="#e0e0e0" strokeWidth="1" strokeDasharray="3 3" />
     </svg>
   );
 }
@@ -241,6 +318,15 @@ export const STEPS: TourStep[] = [
     Visual: VisualModelBuilding,
   },
   {
+    title: "Review & Revise",
+    caption: "Reviewers accept, adjust, or override each recommendation — then mark it complete or submit it for approval.",
+    detail: "The model gives every engagement a starting point. Reviewers can accept the recommendation as-is, revise the price based on their judgment, or override it entirely. Once finalized, they mark it complete — or, if an approval workflow is configured, submit it through the defined approval chain before pricing takes effect.",
+    page: "/",
+    target: "revised-columns",
+    action: "scroll-to-revised",
+    Visual: VisualReviewRevise,
+  },
+  {
     title: "Why ML, Not Gen AI",
     caption: "Deterministic, not probabilistic. ChatGPT doesn't have the transaction history, market feedback loop, or industry context.",
     detail: "This distinction matters. ML produces repeatable, auditable outputs grounded in real transaction data. You can't get this from ChatGPT — it doesn't have the transaction history, the market feedback loop, or the industry context baked in. Every recommendation is traceable back to the data that produced it.",
@@ -259,22 +345,22 @@ export const STEPS: TourStep[] = [
     Visual: VisualModelRunning,
   },
   {
-    title: "Complication",
-    caption: "Something changes — win rate shifts, competitor prices drop, supply tightens. The model sees it.",
-    detail: "Markets don't sit still. Win rates shift, competitors undercut, supply tightens. The model detects the signal in the data before it becomes a pattern you can't ignore — so you can act while there's still room to maneuver.",
+    title: "Decision Support",
+    caption: "Select any engagement and get the context you need to act — price history, fee details, and recommendation trends, all attached to the row.",
+    detail: "Every engagement opens a support panel with historical pricing data, fee breakdowns, recommendation history, and engagement details. No digging through spreadsheets or chasing down context — the data is right there when you need to make a decision.",
     page: "/",
     target: "drawer",
-    action: "open-drawer-explain-complication",
-    Visual: VisualComplication,
+    action: "open-drawer-price-history",
+    Visual: VisualDecisionSupport,
   },
   {
-    title: "Lesson + Opportunity",
-    caption: "We identify what happened, why, and what to do. The model trains on itself and gets smarter.",
-    detail: "This is where the loop closes. We identify what changed, why it matters, and what to do about it. The training loops back on itself — every outcome, every override, every market shift feeds the next cycle. The model doesn't just react, it learns.",
+    title: "AI Where It Matters",
+    caption: "On top of the data, AI layers on narrative explanations and interactive analytics — so reviewers understand the 'why,' not just the 'what.'",
+    detail: "\"Explain the Price\" uses AI to generate a plain-language breakdown of pricing drivers — margin gaps, peer benchmarks, client history — so the reviewer doesn't have to piece it together. \"AI Analytics\" lets you ask questions and explore scenarios in natural language. These AI features sit alongside the data views, augmenting the review without replacing it.",
     page: "/",
     target: "drawer",
-    action: "open-drawer-explain-complication",
-    Visual: VisualFeedbackLoop,
+    action: "open-drawer-explain-price",
+    Visual: VisualAIPowered,
   },
   {
     title: "Improved Recommendation",

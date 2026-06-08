@@ -620,6 +620,9 @@ export default function PriceReviewPage() {
   const etpMsgIdRef = useRef(0);
   const complicationPreloadRef = useRef(false);
   const kpiScrollRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const revisedColRef = useRef<HTMLTableCellElement>(null);
+  const [revisedOverlay, setRevisedOverlay] = useState<{ left: number; width: number } | null>(null);
   const [analyticsPreload, setAnalyticsPreload] = useState<string | undefined>();
   const [activeTourStep, setActiveTourStep] = useState<number | null>(null);
   const [statusFilterAnchor, setStatusFilterAnchor] = useState<HTMLElement | null>(null);
@@ -687,6 +690,25 @@ export default function PriceReviewPage() {
         setEtpMessages([complicationEtpMsg]);
         setEtpThinking(false);
         etpMsgIdRef.current = 1;
+      } else if (detail.action === "scroll-to-revised") {
+        setDrawerOpenRow(null);
+        setSelectedLayout(null);
+        setTimeout(() => {
+          const el = tableContainerRef.current;
+          const cell = revisedColRef.current;
+          if (el && cell) {
+            el.scrollTo({ left: cell.offsetLeft - 80, behavior: "smooth" });
+            setTimeout(() => {
+              setRevisedOverlay({ left: cell.offsetLeft, width: cell.offsetWidth + 150 + 130 + 130 + 130 + 120 });
+            }, 400);
+          }
+        }, 300);
+      } else if (detail.action === "open-drawer-decision-support") {
+        setDrawerOpenRow(0);
+        setActiveDrawerTab("details");
+      } else if (detail.action === "open-drawer-explain-price") {
+        setDrawerOpenRow(0);
+        setActiveDrawerTab("explain");
       } else if (detail.action === "open-drawer-analytics") {
         setDrawerOpenRow(0);
         setActiveDrawerTab("analytics");
@@ -698,7 +720,52 @@ export default function PriceReviewPage() {
       }
     };
     window.addEventListener("tour-step", handler);
-    return () => window.removeEventListener("tour-step", handler);
+
+    const tempoHandler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) {
+        setActiveTourStep(null);
+        setSelectedLayout(null);
+        setLayoutPartnerFilter(null);
+        setExpandedSubs(new Set());
+        setRevisedOverlay(null);
+        return;
+      }
+      if (detail.action === "open-data-layout") {
+        setRevisedOverlay(null);
+        setDrawerOpenRow(null);
+        setSelectedLayout("org-region");
+      } else if (detail.action === "scroll-to-revised") {
+        setDrawerOpenRow(null);
+        setSelectedLayout(null);
+        setTimeout(() => {
+          const el = tableContainerRef.current;
+          const cell = revisedColRef.current;
+          if (el && cell) {
+            el.scrollTo({ left: cell.offsetLeft - 80, behavior: "smooth" });
+            setTimeout(() => {
+              setRevisedOverlay({ left: cell.offsetLeft, width: cell.offsetWidth + 150 + 130 + 130 + 130 + 120 });
+            }, 400);
+          }
+        }, 300);
+      } else if (detail.action === "open-drawer-price-history") {
+        setRevisedOverlay(null);
+        setDrawerOpenRow(0);
+        setActiveDrawerTab("decision-support");
+        setDecisionSupportView("price-history");
+      } else if (detail.action === "open-drawer-explain-price") {
+        setRevisedOverlay(null);
+        setDrawerOpenRow(0);
+        setActiveDrawerTab("explain");
+      } else {
+        setRevisedOverlay(null);
+      }
+    };
+    window.addEventListener("tempo-tour-step", tempoHandler);
+    return () => {
+      window.removeEventListener("tour-step", handler);
+      window.removeEventListener("tempo-tour-step", tempoHandler);
+    };
   }, [drawerOpenRow]);
 
   const handleEtpChip = (chip: EtpSuggestion) => {
@@ -793,7 +860,7 @@ export default function PriceReviewPage() {
 
         {/* Data Layout Side Panel */}
         {selectedLayout === "org-region" && (
-          <Box sx={{ width: 280, flexShrink: 0, bgcolor: "white", borderRight: "1px solid rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <Box data-tour="data-layout-panel" sx={{ width: 280, flexShrink: 0, bgcolor: "white", borderRight: "1px solid rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
             <Box sx={{ borderTop: "3px solid #00446a" }} />
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5 }}>
               <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#00446a" }}>Data Layout View</Typography>
@@ -885,11 +952,45 @@ export default function PriceReviewPage() {
         )}
 
         {/* Main content */}
-        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", bgcolor: "#f8f8f8", position: "relative" }}>
-          <Box sx={{ px: 3, pt: 2.5, pb: 1.5, bgcolor: "rgba(0,0,0,0.04)" }}>
+        <Box data-tour="tempo-full-page" sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", bgcolor: "#f8f8f8", position: "relative" }}>
+          <Box sx={{ px: 3, pt: 2.5, pb: 1.5, bgcolor: "rgba(0,0,0,0.04)", display: "flex", alignItems: "center", gap: 1.5 }}>
             <Typography variant="h4" sx={{ fontWeight: 400, color: "#00446a", letterSpacing: "0.25px", lineHeight: "42px" }}>
               Price Review
             </Typography>
+            <Tooltip
+              title={`DEMO TALK TRACK — REVIEW UNITS\n\nEach row in this table is a "review unit" — the thing being priced. A review unit is a combination of attributes from your data that uniquely identifies something you need to price.\n\n• IN THIS INSTANCE: The review unit is an engagement, made up of:\n  – Client (e.g. Meridian Health Systems)\n  – Project (e.g. Annual Audit FY26)\n  – Service Line (e.g. Audit & Assurance)\n\nThat combination is what makes each row unique. One client can have multiple engagements, each priced independently.\n\n• IN ANOTHER INSTANCE it might be:\n  – Customer + Product + Region (distribution)\n  – SKU + Plant + Channel (manufacturing)\n  – Account + Contract + Term (SaaS)\n\nTempo adapts to your review unit — the columns, KPIs, model inputs, and recommendations all reshape around whatever your unit is.`}
+              arrow
+              placement="bottom-start"
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: "white",
+                    color: "#333",
+                    border: "1px solid #D97C14",
+                    fontSize: 11,
+                    lineHeight: 1.6,
+                    maxWidth: 340,
+                    p: 2,
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                    whiteSpace: "pre-line",
+                  },
+                },
+                arrow: { sx: { color: "white", "&::before": { border: "1px solid #D97C14" } } },
+              }}
+            >
+              <Box
+                sx={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: "3px",
+                  bgcolor: "rgba(0,0,0,0.06)",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  "&:hover": { bgcolor: "rgba(0,0,0,0.12)" },
+                  transition: "background-color 0.15s",
+                }}
+              />
+            </Tooltip>
           </Box>
 
           {/* KPI Cards */}
@@ -911,7 +1012,7 @@ export default function PriceReviewPage() {
           </Box>
 
           {/* Toolbar */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: "5px", px: 3, py: 1 }}>
+          <Box data-tour="toolbar-area" sx={{ display: "flex", alignItems: "center", gap: "5px", px: 3, py: 1 }}>
             {[FilterListIcon, ViewColumnIcon, TableRowsIcon].map((Icon, i) => (
               <IconButton key={i} size="small" sx={{ height: 30, width: 30, borderRadius: "6px", bgcolor: "white", border: "1px solid rgba(0,0,0,0.12)", "&:hover": { bgcolor: "rgba(0,0,0,0.04)", borderColor: "rgba(0,0,0,0.24)" } }}>
                 <Icon sx={{ fontSize: 20, color: "rgba(0,0,0,0.6)" }} />
@@ -974,7 +1075,7 @@ export default function PriceReviewPage() {
           </Box>
 
           {/* Table */}
-          <TableContainer data-tour="data-table" component={Paper} elevation={0} sx={{ flex: 1, mx: 3, bgcolor: "white", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.08)", overflow: "auto" }}>
+          <TableContainer ref={tableContainerRef} data-tour="data-table" component={Paper} elevation={0} sx={{ flex: 1, mx: 3, bgcolor: "white", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.08)", overflow: "auto", position: "relative" }}>
             <Table size="small" stickyHeader sx={{ minWidth: totalMinWidth }}>
               <TableHead>
                 <TableRow>
@@ -989,7 +1090,7 @@ export default function PriceReviewPage() {
                   </TableCell>
                   <TableCell sx={{ ...headerCellSx, bgcolor: "#fafafa", width: 38, minWidth: 38 }} />
                   {columns.map((col) => (
-                    <TableCell key={col.key} align={col.align || "left"} sx={{ ...headerCellSx, bgcolor: "#fafafa", width: col.width, minWidth: col.width, ...(col.label.includes("\n") && { whiteSpace: "pre-line", lineHeight: 1.3 }) }}>
+                    <TableCell key={col.key} align={col.align || "left"} ref={col.key === "revisedFixedFee" ? revisedColRef : undefined} sx={{ ...headerCellSx, bgcolor: "#fafafa", width: col.width, minWidth: col.width, ...(col.label.includes("\n") && { whiteSpace: "pre-line", lineHeight: 1.3 }) }}>
                       {col.key === "status" ? (
                         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           <span>{col.label}</span>
@@ -1024,6 +1125,19 @@ export default function PriceReviewPage() {
                 })}
               </TableBody>
             </Table>
+            {revisedOverlay && (
+              <Box
+                data-tour="revised-columns"
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: revisedOverlay.left,
+                  width: revisedOverlay.width,
+                  height: "100%",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
           </TableContainer>
 
           <TablePagination
@@ -1387,7 +1501,7 @@ export default function PriceReviewPage() {
                         <Box key={msg.id} sx={{ mb: 1.5, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start" }}>
                           <Box sx={{ maxWidth: "90%", px: 1.75, py: 1.25, borderRadius: msg.role === "user" ? "12px 12px 2px 12px" : "12px 12px 12px 2px", bgcolor: msg.role === "user" ? "#00446a" : "rgba(0,0,0,0.04)", color: msg.role === "user" ? "white" : "#333" }}>
                             {msg.title && <Typography sx={{ fontSize: 12, fontWeight: 700, color: msg.role === "user" ? "rgba(255,255,255,0.7)" : "#00446a", mb: 0.5 }}>{msg.title}</Typography>}
-                            <Typography sx={{ fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-line" }}>{renderBold(msg.content, activeTourStep === 4 ? ["Win rate in Audit & Assurance has shifted -12% this quarter."] : activeTourStep === 5 ? ["The model identified 3 competing bids in the last 60 days that were 8–15% below our previous recommendation."] : undefined)}</Typography>
+                            <Typography sx={{ fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-line" }}>{renderBold(msg.content)}</Typography>
                           </Box>
                         </Box>
                       ))}
