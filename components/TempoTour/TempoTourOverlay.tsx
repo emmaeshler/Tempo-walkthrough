@@ -76,17 +76,6 @@ const STEPS: Step[] = [
   },
   {
     page: "/",
-    target: "kpi-cards",
-    icon: "📊",
-    color: "#D97C14",
-    title: "KPIs That Move With You",
-    caption:
-      "These metrics summarize your entire book at a glance — review progress, impact, average increases. Filter by partner or service line and every number recalculates instantly.",
-    detail:
-      "KPIs are configured per instance. This demo shows pricing-focused metrics, but Tempo can surface margin, volume, utilization, or any metric that matters to your review process.",
-  },
-  {
-    page: "/",
     target: "data-layout-panel",
     action: "open-data-layout",
     icon: "🗂️",
@@ -96,6 +85,17 @@ const STEPS: Step[] = [
       "You can organize your data any way you want to get to pricing segmentation that makes sense for your business. Drill down by service line, region, partner, product — whatever hierarchy matters to your review process.",
     detail:
       "Permissions are configurable per user and per hierarchy level. A partner sees their clients; a practice leader sees the full service line; firm leadership sees the entire book. Filter to any level and the KPIs, table, and recommendations all update instantly.",
+  },
+  {
+    page: "/",
+    target: "kpi-cards",
+    icon: "📊",
+    color: "#D97C14",
+    title: "KPIs That Move With You",
+    caption:
+      "These metrics summarize your entire book at a glance — review progress, impact, average increases. Filter by partner or service line and every number recalculates instantly.",
+    detail:
+      "KPIs are configured per instance. This demo shows pricing-focused metrics, but Tempo can surface margin, volume, utilization, or any metric that matters to your review process.",
   },
   {
     page: "/",
