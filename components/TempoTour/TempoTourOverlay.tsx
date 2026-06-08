@@ -6,6 +6,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTempoTour } from "./TempoTourContext";
 
@@ -151,11 +152,24 @@ export default function TempoTourOverlay() {
   const pathname = usePathname();
   const [spotlight, setSpotlight] = useState<SpotlightRect | null>(null);
   const [navigating, setNavigating] = useState(false);
+  const [subStep, setSubStep] = useState(0);
   const rafRef = useRef<number>(0);
 
   const step = STEPS[currentStep];
   const isLast = currentStep === totalSteps - 1;
   const isFirst = currentStep === 0;
+
+  const isDecisionSupport = step?.action === "open-drawer-price-history";
+  const decisionSupportSubs = [
+    { caption: step?.caption, detail: step?.detail, subLabel: "Price History" },
+    {
+      caption: "Every review unit carries its own profile — engagement details, key contacts, historical context, and scope attributes. Everything a reviewer needs to understand the relationship before making a pricing decision.",
+      detail: "This view is configurable per instance. Fields, labels, and sections adapt to your data — whether that's client tenure, contract terms, service complexity, or custom attributes unique to your business.",
+      subLabel: "Engagement Details",
+    },
+  ];
+  const activeCaption = isDecisionSupport ? decisionSupportSubs[subStep]?.caption : step?.caption;
+  const activeDetail = isDecisionSupport ? decisionSupportSubs[subStep]?.detail : step?.detail;
 
   const measureTarget = useCallback(() => {
     if (!step?.target) {
@@ -176,6 +190,10 @@ export default function TempoTourOverlay() {
       height: rect.height + pad * 2,
     });
   }, [step]);
+
+  useEffect(() => {
+    setSubStep(0);
+  }, [currentStep]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -273,7 +291,10 @@ export default function TempoTourOverlay() {
     let top: number;
     let left: number;
 
-    if (wideTarget) {
+    if (wideTarget && step.target === "kpi-cards") {
+      top = spotlight.top + spotlight.height + GAP;
+      left = vw / 2 - CARD_W / 2;
+    } else if (wideTarget) {
       top = spotlight.top + GAP;
       left = currentStep === 1 ? GAP : vw - CARD_W - GAP - 40;
     } else {
@@ -398,8 +419,32 @@ export default function TempoTourOverlay() {
 
         {/* Text */}
         <Box sx={{ px: 3.5, pt: 2.5, pb: 2 }}>
+          {isDecisionSupport && (
+            <Box sx={{ display: "flex", gap: 1, mb: 1.5 }}>
+              {decisionSupportSubs.map((sub, i) => (
+                <Chip
+                  key={i}
+                  label={sub.subLabel}
+                  size="small"
+                  onClick={() => {
+                    setSubStep(i);
+                    window.dispatchEvent(new CustomEvent("tempo-tour-step", {
+                      detail: { step: currentStep, action: i === 0 ? "open-drawer-price-history" : "open-drawer-engagement-details" },
+                    }));
+                  }}
+                  sx={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    bgcolor: subStep === i ? "#00446a" : "rgba(0,0,0,0.06)",
+                    color: subStep === i ? "white" : "rgba(0,0,0,0.6)",
+                    "&:hover": { bgcolor: subStep === i ? "#003050" : "rgba(0,0,0,0.1)" },
+                  }}
+                />
+              ))}
+            </Box>
+          )}
           <Typography sx={{ fontSize: 14, color: "rgba(0,0,0,0.6)", lineHeight: 1.7 }}>
-            {step.caption}
+            {activeCaption}
           </Typography>
           <Typography
             sx={{
@@ -411,7 +456,7 @@ export default function TempoTourOverlay() {
               borderLeft: "2px solid rgba(0,0,0,0.08)",
             }}
           >
-            {step.detail}
+            {activeDetail}
           </Typography>
         </Box>
 
@@ -444,9 +489,16 @@ export default function TempoTourOverlay() {
             ))}
           </Box>
           <Box sx={{ display: "flex", gap: 1 }}>
-            {!isFirst && (
+            {!(isFirst && subStep === 0) && (
               <Button
-                onClick={prev}
+                onClick={() => {
+                  if (isDecisionSupport && subStep > 0) {
+                    setSubStep(0);
+                    window.dispatchEvent(new CustomEvent("tempo-tour-step", { detail: { step: currentStep, action: "open-drawer-price-history" } }));
+                  } else {
+                    prev();
+                  }
+                }}
                 size="small"
                 sx={{ color: "#00446a", fontWeight: 600, fontSize: 14, textTransform: "none", minWidth: 0, px: 1.5 }}
               >
@@ -454,7 +506,16 @@ export default function TempoTourOverlay() {
               </Button>
             )}
             <Button
-              onClick={isLast ? close : next}
+              onClick={() => {
+                if (isDecisionSupport && subStep < decisionSupportSubs.length - 1) {
+                  setSubStep(subStep + 1);
+                  window.dispatchEvent(new CustomEvent("tempo-tour-step", { detail: { step: currentStep, action: "open-drawer-engagement-details" } }));
+                } else if (isLast) {
+                  close();
+                } else {
+                  next();
+                }
+              }}
               variant="contained"
               size="small"
               sx={{

@@ -740,9 +740,13 @@ export default function PriceReviewPage() {
       if (detail.action === "open-data-layout") {
         setRevisedOverlay(null);
         setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
         setSelectedLayout("org-region");
       } else if (detail.action === "scroll-to-revised") {
         setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
         setSelectedLayout(null);
         setTimeout(() => {
           const el = tableContainerRef.current;
@@ -756,18 +760,23 @@ export default function PriceReviewPage() {
         }, 300);
       } else if (detail.action === "open-drawer-price-history") {
         setRevisedOverlay(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
         setDrawerOpenRow(0);
         setActiveDrawerTab("decision-support");
         setDecisionSupportView("price-history");
-      } else if (detail.action === "open-drawer-explain-price") {
+      } else if (detail.action === "open-drawer-engagement-details") {
         setRevisedOverlay(null);
-        setDrawerOpenRow(null);
         setMassActionOpen(false);
         setMassActionStep(1);
-        setTimeout(() => {
-          setDrawerOpenRow(0);
-          setActiveDrawerTab("explain");
-        }, 100);
+        setDrawerOpenRow(0);
+        setActiveDrawerTab("details");
+      } else if (detail.action === "open-drawer-explain-price") {
+        setRevisedOverlay(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setDrawerOpenRow(0);
+        setActiveDrawerTab("explain");
       } else if (detail.action === "open-mass-action") {
         setRevisedOverlay(null);
         setDrawerOpenRow(null);
