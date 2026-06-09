@@ -101,7 +101,7 @@ const STEPS: Step[] = [
   {
     page: "/",
     target: "drawer",
-    action: "open-drawer-price-history",
+    action: "open-drawer-engagement-details",
     icon: "📈",
     color: "#00446a",
     title: "Decision Support",
@@ -159,14 +159,14 @@ export default function TempoTourOverlay() {
   const isLast = currentStep === totalSteps - 1;
   const isFirst = currentStep === 0;
 
-  const isDecisionSupport = step?.action === "open-drawer-price-history";
+  const isDecisionSupport = step?.action === "open-drawer-engagement-details";
   const decisionSupportSubs = [
-    { caption: step?.caption, detail: step?.detail, subLabel: "Price History" },
     {
       caption: "Every review unit carries its own profile — engagement details, key contacts, historical context, and scope attributes. Everything a reviewer needs to understand the relationship before making a pricing decision.",
       detail: "This view is configurable per instance. Fields, labels, and sections adapt to your data — whether that's client tenure, contract terms, service complexity, or custom attributes unique to your business.",
       subLabel: "Engagement Details",
     },
+    { caption: step?.caption, detail: step?.detail, subLabel: "Price History" },
   ];
   const activeCaption = isDecisionSupport ? decisionSupportSubs[subStep]?.caption : step?.caption;
   const activeDetail = isDecisionSupport ? decisionSupportSubs[subStep]?.detail : step?.detail;
@@ -429,7 +429,7 @@ export default function TempoTourOverlay() {
                   onClick={() => {
                     setSubStep(i);
                     window.dispatchEvent(new CustomEvent("tempo-tour-step", {
-                      detail: { step: currentStep, action: i === 0 ? "open-drawer-price-history" : "open-drawer-engagement-details" },
+                      detail: { step: currentStep, action: i === 0 ? "open-drawer-engagement-details" : "open-drawer-price-history" },
                     }));
                   }}
                   sx={{
@@ -494,7 +494,7 @@ export default function TempoTourOverlay() {
                 onClick={() => {
                   if (isDecisionSupport && subStep > 0) {
                     setSubStep(0);
-                    window.dispatchEvent(new CustomEvent("tempo-tour-step", { detail: { step: currentStep, action: "open-drawer-price-history" } }));
+                    window.dispatchEvent(new CustomEvent("tempo-tour-step", { detail: { step: currentStep, action: "open-drawer-engagement-details" } }));
                   } else {
                     prev();
                   }
@@ -509,7 +509,7 @@ export default function TempoTourOverlay() {
               onClick={() => {
                 if (isDecisionSupport && subStep < decisionSupportSubs.length - 1) {
                   setSubStep(subStep + 1);
-                  window.dispatchEvent(new CustomEvent("tempo-tour-step", { detail: { step: currentStep, action: "open-drawer-engagement-details" } }));
+                  window.dispatchEvent(new CustomEvent("tempo-tour-step", { detail: { step: currentStep, action: "open-drawer-price-history" } }));
                 } else if (isLast) {
                   close();
                 } else {
