@@ -37,6 +37,7 @@ const INSTANCES = [
   { id: 218, env: "live" as const, name: "Fixed Fee Model", desc: "Annual fixed-fee engagements reviewed against peer benchmarks and margin targets" },
   { id: 362, env: "live" as const, name: "Tax Recommendation Review", desc: "Tax service pricing recommendations based on complexity scoring and filing volume" },
   { id: 651, env: "live" as const, name: "Tax Engagement Fees Review", desc: "Existing tax engagement fees evaluated for rate-card alignment and margin recovery" },
+  { id: 415, env: "live" as const, name: "Professional Services", desc: "Consulting and advisory engagement fees reviewed against utilization rates and market benchmarks" },
   { id: 103, env: "uat" as const, name: "Fixed Fee Model", desc: "Staging copy of the fixed-fee model for testing configuration changes before go-live" },
   { id: 146, env: "uat" as const, name: "Tax Engagement Fees Review", desc: "Staging copy of tax engagement fees for validating new fee thresholds" },
   { id: 203, env: "uat" as const, name: "Tax Recommendation Review", desc: "Staging copy of tax recommendations for testing model updates" },
@@ -63,7 +64,15 @@ function Logo({ size = 20 }: { size?: number }) {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tempoExpanded, setTempoExpanded] = useState(true);
-  const [activeInstance, setActiveInstance] = useState(INSTANCES[0]);
+  const [activeInstance, setActiveInstance] = useState(() => {
+    if (typeof window === "undefined") return INSTANCES[0];
+    const saved = localStorage.getItem("tempo-instance-id");
+    if (saved) {
+      const found = INSTANCES.find((i) => i.id === Number(saved));
+      if (found) return found;
+    }
+    return INSTANCES[0];
+  });
   const [instanceModalOpen, setInstanceModalOpen] = useState(false);
   const { open: openTempoTour } = useTempoTour();
   const { open: openWalkthrough } = useWalkthrough();
@@ -122,13 +131,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             INSIGHT2PROFIT
           </Typography>
         </Box>
-        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1 }}>
-          <Tooltip title="What is Tempo?" arrow>
-            <IconButton onClick={openTempoTour} size="small" sx={{ color: "#666" }}>
-              <SlideshowIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1 }} />
       </Box>
 
       <Box sx={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
@@ -276,6 +279,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 slotProps={{ primary: { sx: { fontSize: 12, color: "rgba(0,0,0,0.4)" } } }}
               />
             </ListItemButton>
+
+            <ListItemButton
+              onClick={() => { openTempoTour(); setSidebarOpen(false); }}
+              sx={{ py: 1, px: 2.5, opacity: 0.4, "&:hover": { opacity: 0.7 } }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <SlideshowIcon sx={{ color: "rgba(0,0,0,0.3)", fontSize: 20 }} />
+              </ListItemIcon>
+              <ListItemText
+                primary="What is Tempo?"
+                slotProps={{ primary: { sx: { fontSize: 12, color: "rgba(0,0,0,0.4)" } } }}
+              />
+            </ListItemButton>
           </List>
 
           {/* User info */}
@@ -338,7 +354,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             return (
               <Box
                 key={inst.id}
-                onClick={() => { setActiveInstance(inst); setInstanceModalOpen(false); }}
+                onClick={() => { setActiveInstance(inst); setInstanceModalOpen(false); localStorage.setItem("tempo-instance-id", String(inst.id)); window.dispatchEvent(new CustomEvent("instance-change", { detail: inst.id })); }}
                 sx={{
                   display: "flex",
                   alignItems: "flex-start",

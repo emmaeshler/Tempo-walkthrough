@@ -276,6 +276,155 @@ const columns: Column[] = [
   },
 ];
 
+const psColumns: Column[] = [
+  {
+    key: "hasComments",
+    label: "Has\nComments",
+    width: 50,
+    align: "center",
+    render: (row) => row.hasComments ? <ChatBubbleOutlineIcon sx={{ fontSize: 18, color: "#00446a" }} /> : null,
+  },
+  {
+    key: "status",
+    label: "Status",
+    width: 120,
+    render: (row) => {
+      const c = statusColors[row.status] || { bg: "#f5f5f5", color: "#333" };
+      return (
+        <Box sx={{ display: "inline-flex", alignItems: "center", px: 1, py: 0.25, borderRadius: "4px", bgcolor: c.bg }}>
+          <Typography sx={{ fontSize: 11, fontWeight: 500, color: c.color, whiteSpace: "nowrap" }}>{row.status}</Typography>
+        </Box>
+      );
+    },
+  },
+  { key: "partnerName", label: "Engagement Lead", width: 140 },
+  { key: "clientName", label: "Client Name", width: 180 },
+  { key: "projectName", label: "Service Description", width: 220 },
+  { key: "serviceLine", label: "Practice Area", width: 150 },
+  { key: "clientTenure", label: "Client Tenure", width: 100, align: "center" },
+  { key: "qtyHrs", label: "Qty (Hrs)", width: 90, align: "right", render: (row) => row.qtyHrs?.toLocaleString("en-US") ?? "—" },
+  { key: "estDays", label: "Est. Days", width: 90, align: "right", render: (row) => row.estDays?.toLocaleString("en-US") ?? "—" },
+  { key: "billRate", label: "Bill Rate ($/Hr)", width: 120, align: "right", render: (row) => row.billRate ? `$${row.billRate}` : "—" },
+  { key: "extFees", label: "Ext. Fees ($)", width: 130, align: "right", render: (row) => row.extFees ? fmt(row.extFees) : "—" },
+  { key: "vcPerHr", label: "VC/Hr", width: 90, align: "right", render: (row) => row.vcPerHr ? `$${row.vcPerHr}` : "—" },
+  {
+    key: "marginPct",
+    label: "Margin %",
+    width: 100,
+    align: "right",
+    render: (row) => {
+      const m = row.marginPct;
+      if (m == null) return "—";
+      const color = m >= 40 ? "#2e7d32" : m >= 30 ? "#e65100" : "#c62828";
+      return <Typography sx={{ fontSize: 12, fontWeight: 600, color }}>{m.toFixed(1)}%</Typography>;
+    },
+  },
+  {
+    key: "recBillRate",
+    label: "Rec Rate ($/Hr)",
+    width: 120,
+    align: "right",
+    render: (row) => {
+      if (!row.recBillRate) return "—";
+      return (
+        <Box sx={{ display: "inline-flex", px: 1, py: 0.25, borderRadius: "4px", bgcolor: "#e8f5e9" }}>
+          <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#2e7d32" }}>${row.recBillRate}</Typography>
+        </Box>
+      );
+    },
+  },
+  { key: "recExtFees", label: "Rec Ext. Fees", width: 130, align: "right", render: (row) => row.recExtFees ? fmt(row.recExtFees) : "—" },
+  {
+    key: "recMarginPct",
+    label: "Rec Margin %",
+    width: 110,
+    align: "right",
+    render: (row) => {
+      const m = row.recMarginPct;
+      if (m == null) return "—";
+      return (
+        <Box sx={{ display: "inline-flex", px: 1, py: 0.25, borderRadius: "4px", bgcolor: "#e8f5e9" }}>
+          <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#2e7d32" }}>{m.toFixed(1)}%</Typography>
+        </Box>
+      );
+    },
+  },
+  {
+    key: "revisedBillRate",
+    label: "Revised Rate ($/Hr)",
+    width: 140,
+    align: "right",
+    render: (row) => row.revisedBillRate ? <Box sx={{ bgcolor: "#b3e5fc", px: 1, py: 0.25, borderRadius: "2px", textAlign: "right" }}>${row.revisedBillRate}</Box> : "—",
+  },
+  {
+    key: "revisedExtFees",
+    label: "Revised Ext. Fees",
+    width: 140,
+    align: "right",
+    render: (row) => row.revisedExtFees ? <Box sx={{ bgcolor: "#b3e5fc", px: 1, py: 0.25, borderRadius: "2px", textAlign: "right" }}>{fmt(row.revisedExtFees)}</Box> : "—",
+  },
+  {
+    key: "revisedMarginPct",
+    label: "Revised Margin %",
+    width: 130,
+    align: "right",
+    render: (row) => {
+      const m = row.revisedMarginPct;
+      if (m == null) return "—";
+      return (
+        <Box sx={{ bgcolor: "#b3e5fc", px: 1, py: 0.25, borderRadius: "2px", textAlign: "right" }}>
+          <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{m.toFixed(1)}%</Typography>
+        </Box>
+      );
+    },
+  },
+  {
+    key: "revisedImpact",
+    label: "Revised Impact $",
+    width: 130,
+    align: "right",
+    render: (row) => {
+      const positive = row.revisedImpact >= 0;
+      return <Box sx={{ bgcolor: "#b3e5fc", px: 1, py: 0.25, borderRadius: "2px", textAlign: "right" }}><Typography sx={{ fontSize: 12, color: positive ? "#2e7d32" : "#c62828", fontWeight: 500 }}>{positive ? "+" : ""}{fmt(row.revisedImpact)}</Typography></Box>;
+    },
+  },
+  { key: "revisionReason", label: "Revision Reason", width: 150, render: (row) => row.revisionReason || "—" },
+  {
+    key: "clientCommStatus",
+    label: "Client Comm Status",
+    width: 160,
+    align: "center",
+    render: (row) => {
+      const c = commColors[row.clientCommStatus] || { bg: "#f5f5f5", color: "#333" };
+      return (
+        <Box sx={{ display: "inline-flex", px: 1, py: 0.25, borderRadius: "4px", bgcolor: c.bg }}>
+          <Typography sx={{ fontSize: 11, fontWeight: 500, color: c.color, whiteSpace: "nowrap" }}>{row.clientCommStatus}</Typography>
+        </Box>
+      );
+    },
+  },
+];
+
+function computePsKpis(rows: RowData[]) {
+  const total = rows.length;
+  const complete = rows.filter(r => r.status === "Complete").length;
+  const needsReview = rows.filter(r => r.status === "Needs Review").length;
+  const totalHrs = rows.reduce((s, r) => s + (r.qtyHrs || 0), 0);
+  const totalExtFees = rows.reduce((s, r) => s + (r.extFees || 0), 0);
+  const totalRevisedFees = rows.reduce((s, r) => s + (r.revisedExtFees || 0), 0);
+  const avgMargin = total > 0 ? rows.reduce((s, r) => s + (r.marginPct || 0), 0) / total : 0;
+  const avgRevisedMargin = total > 0 ? rows.reduce((s, r) => s + (r.revisedMarginPct || 0), 0) / total : 0;
+  return [
+    { title: "REVIEW PROGRESS", value: total > 0 ? `${Math.round((complete / total) * 100)}% Complete` : "—" },
+    { title: "NEEDS REVIEW #", value: `${needsReview} Items` },
+    { title: "TOTAL HOURS", value: totalHrs.toLocaleString("en-US") },
+    { title: "CURRENT EXT. FEES", value: `$${Math.round(totalExtFees).toLocaleString("en-US")}` },
+    { title: "REVISED EXT. FEES", value: `$${Math.round(totalRevisedFees).toLocaleString("en-US")}` },
+    { title: "AVG CURRENT MARGIN", value: `${avgMargin.toFixed(1)}%` },
+    { title: "AVG REVISED MARGIN", value: `${avgRevisedMargin.toFixed(1)}%` },
+  ];
+}
+
 const headerCellSx = {
   fontFamily: "Inter, sans-serif",
   fontSize: 11,
@@ -304,6 +453,79 @@ const AI_SUGGESTIONS = [
 
 interface EtpSuggestion { label: string; inputText: string; flowKey: string }
 interface EtpMsg { id: string; role: "user" | "assistant"; content: string; title?: string; suggestions?: EtpSuggestion[] }
+interface DsMsg { id: string; role: "user" | "assistant"; content: string; title?: string; suggestions?: EtpSuggestion[]; table?: { headers: string[]; rows: string[][] }; chart?: "rate-history" }
+
+const psRateHistoryData = [
+  { date: "Q1 2024", rate: 275 },
+  { date: "Q2 2024", rate: 275 },
+  { date: "Q3 2024", rate: 285, annotation: "Annual review +3.6%" },
+  { date: "Q4 2024", rate: 285 },
+  { date: "Q1 2025", rate: 295, annotation: "Market rate adj +3.5%" },
+  { date: "Q2 2025", rate: 295 },
+  { date: "Q3 2025", rate: 295 },
+  { date: "Q4 2025", rate: 295 },
+  { date: "Q1 2026", rate: 295 },
+  { date: "Q2 2026", rate: 319, annotation: "Model rec +8.1%" },
+];
+
+const dsFlows: Record<string, { thinkingDelay: number; thinkingMessage?: string; response: Omit<DsMsg, "id" | "role"> }> = {
+  "ds-comparable": {
+    thinkingDelay: 1400,
+    thinkingMessage: "Finding comparable engagements…",
+    response: {
+      title: "Comparable Engagements",
+      content: "**4 engagements** match this service profile. Rates ranged from **$285–$310/hr** with average project duration of **2,225 hours**.",
+      table: {
+        headers: ["Engagement", "Rate/Hr", "Hrs", "Margin"],
+        rows: [
+          ["ERP Implementation – Greenfield Mfg", "$305", "3,200", "43.6%"],
+          ["Property Mgmt Platform – Liberty Mutual", "$285", "1,500", "43.2%"],
+          ["Cloud Migration – TechVault Solutions", "$305", "1,800", "43.6%"],
+          ["Telehealth Rollout – Vanguard Senior Living", "$290", "1,400", "43.1%"],
+        ],
+      },
+      suggestions: [
+        { label: "Show rate trend", inputText: "Show rate trend for this engagement", flowKey: "ds-rate-trend" },
+      ],
+    },
+  },
+  "ds-rate-trend": {
+    thinkingDelay: 1200,
+    thinkingMessage: "Loading rate history…",
+    response: {
+      title: "Rate Trend",
+      content: "Rate evolution over the past **10 quarters** — from **$275/hr** to a recommended **$319/hr** (+16% cumulative).",
+      chart: "rate-history",
+      suggestions: [
+        { label: "What drives this rate?", inputText: "What drives this rate?", flowKey: "ds-rate-drivers" },
+        { label: "Summarize for client call", inputText: "Summarize for client call", flowKey: "ds-client-brief" },
+      ],
+    },
+  },
+  "ds-rate-drivers": {
+    thinkingDelay: 1800,
+    thinkingMessage: "Analyzing rate drivers…",
+    response: {
+      title: "Rate Drivers",
+      content: "**Current rate: $295/hr** → Recommended: **$319/hr** (+8%)\n\nThe rate recommendation is driven by three factors:\n\n• **Variable cost floor** ($168/hr) — Direct delivery cost sets the minimum viable rate. Current margin of **43.1%** leaves **$127/hr** contribution\n• **Peer rate positioning** — Current rate is $4/hr above the **$291/hr** peer average for Technology engagements, but below top-quartile at **$310/hr**\n• **Scope complexity** — Digital Transformation Roadmap carries cross-functional dependencies and executive stakeholder management that justify premium positioning\n\nThe model balances rate competitiveness against margin recovery — pushing rates too aggressively risks client pushback on a **5-year** relationship.",
+      suggestions: [
+        { label: "Summarize for client call", inputText: "Summarize for client call", flowKey: "ds-client-brief" },
+      ],
+    },
+  },
+  "ds-client-brief": {
+    thinkingDelay: 2000,
+    thinkingMessage: "Preparing client brief…",
+    response: {
+      title: "Client Conversation Brief",
+      content: "**Meridian Health Systems — Digital Transformation Roadmap**\n\n**Opening:** \"We've completed our annual rate review for the Technology engagement. The updated rate reflects market adjustments and the team's growing expertise on your account.\"\n\n**Key points:**\n• Rate moves from **$295/hr** to **$319/hr** — an **8%** adjustment\n• This is **below** the industry average of 9–12% for Technology consulting services\n• The team's **5 Years** of institutional knowledge delivers faster ramp-up and fewer rework cycles\n• Estimated project scope remains at **1,200 hours** — no expansion in effort\n\n**If pushback on rate:** \"We can explore phased increases or scope adjustments, but the base rate needs to reflect current market conditions to retain the caliber of talent assigned to your engagement.\"",
+      suggestions: [
+        { label: "Show comparable engagements", inputText: "Show comparable engagements for this service", flowKey: "ds-comparable" },
+        { label: "Show rate trend", inputText: "Show rate trend for this engagement", flowKey: "ds-rate-trend" },
+      ],
+    },
+  },
+};
 
 const HL_STYLE: React.CSSProperties = { backgroundColor: "rgba(217,124,20,0.18)", boxShadow: "0 0 0 3px rgba(217,124,20,0.18)", borderRadius: 3, padding: "1px 0" };
 
@@ -460,6 +682,122 @@ const initialEtpMsg: EtpMsg = {
   ],
 };
 
+const psInitialEtpMsg: EtpMsg = {
+  id: "etp-ps-0",
+  role: "assistant",
+  title: "Rate Explanation",
+  content: "The Digital Transformation Roadmap rate of **$295/hr** reflects current market benchmarks for senior Technology consulting talent. Peer engagements of similar scope averaged **$291/hr** last quarter. The blended margin of **43.1%** is in line with the **43.4%** peer threshold — placing this engagement in the target range.\n\nThe model recommends an **8% rate increase** to **$319/hr**, which would lift the margin to **47.3%**. This is conservative relative to the **9–12%** increases seen across the Technology portfolio this cycle — reflecting Meridian's **Gold** retention tier and the strategic value of the 5-year relationship.",
+  suggestions: [
+    { label: "Why 8% and Not Higher?", inputText: "Why 8% and not higher?", flowKey: "ps-why-8-pct" },
+    { label: "Break Down the Margin", inputText: "Break down the margin", flowKey: "ps-margin-breakdown" },
+    { label: "Show Peer Comparisons", inputText: "Show peer comparisons", flowKey: "ps-similar-engagements" },
+    { label: "What If We Go Below 8%?", inputText: "What if we go below 8%?", flowKey: "ps-below-8-scenario" },
+    { label: "Give Me Client Talking Points", inputText: "Give me client talking points", flowKey: "ps-talking-points" },
+    { label: "Anticipate Objections", inputText: "Anticipate objections", flowKey: "ps-anticipate-objections" },
+  ],
+};
+
+const psEtpFlows: Record<string, { thinkingDelay: number; thinkingMessage?: string; response: Omit<EtpMsg, "id" | "role"> }> = {
+  "ps-why-8-pct": {
+    thinkingDelay: 1800,
+    thinkingMessage: "Analyzing historical acceptance and model constraints...",
+    response: {
+      title: "Why 8% — Not Higher",
+      content: "The model balances **margin improvement** against **rate sensitivity**.\n\n**Pure margin math says 12%** — that's what it would take to reach top-quartile positioning at **$330/hr** in one cycle. But Meridian's rate acceptance history caps practical increases:\n• 2024 renewal: accepted **$285 → $295/hr** (3.5%)\n• Prior engagement: pushed back at 10%+, settled at 7%\n\nThe model fits a tolerance curve and finds **8% is the 80th-percentile bound** — the highest increase with ≥80% predicted acceptance. Going to 10%+ drops acceptance probability to ~58%, which the model flags as high-risk for a Gold-tier client with 3 active engagements.\n\nThe remaining rate gap can be closed over **2 cycles** at lower risk than a single aggressive adjustment.",
+      suggestions: [
+        { label: "What If We Go Below 8%?", inputText: "What if we go below 8%?", flowKey: "ps-below-8-scenario" },
+        { label: "Break Down the Margin", inputText: "Break down the margin", flowKey: "ps-margin-breakdown" },
+        { label: "Give Me Client Talking Points", inputText: "Give me client talking points", flowKey: "ps-talking-points" },
+      ],
+    },
+  },
+  "ps-margin-breakdown": {
+    thinkingDelay: 1600,
+    thinkingMessage: "Decomposing margin drivers...",
+    response: {
+      title: "Margin Breakdown",
+      content: "**Current margin: 43.1%** vs. peer average **43.4%** (−0.3pp)\n\nThe margin decomposes into three drivers:\n\n• **Staffing mix** (−1.8pp) — This roadmap requires a heavier mix of senior architects (65% senior vs. 50% peer norm), driving up the **$168/hr** variable cost\n• **Utilization offset** (+1.2pp) — At 1,200 hours, the engagement is well-scoped with minimal bench time, partially offsetting the staffing premium\n• **Rate positioning** (+0.3pp) — The $295/hr rate is slightly above peer average, contributing a small positive margin effect\n\n**What 8% addresses:** The increase lifts margin to **47.3%**, creating a **3.9pp** buffer above peer average. This positions the engagement for sustained profitability even if staffing mix shifts further toward senior talent in Phase 2.",
+      suggestions: [
+        { label: "Why 8% and Not Higher?", inputText: "Why 8% and not higher?", flowKey: "ps-why-8-pct" },
+        { label: "Show Peer Comparisons", inputText: "Show peer comparisons", flowKey: "ps-similar-engagements" },
+        { label: "Anticipate Objections", inputText: "Anticipate objections", flowKey: "ps-anticipate-objections" },
+      ],
+    },
+  },
+  "ps-similar-engagements": {
+    thinkingDelay: 1500,
+    thinkingMessage: "Finding similar engagements...",
+    response: {
+      title: "Top 5 Similar Engagements",
+      content: "1. **Meridian Health — EHR Migration Phase 2** — Technology, Gold — $310/hr — 2,400 hrs — 43.5% margin\n2. **Greenfield Mfg — ERP Implementation** — Technology, Platinum — $305/hr — 3,200 hrs — 43.6% margin\n3. **TechVault — Cloud Migration Strategy** — Technology, Silver — $305/hr — 1,800 hrs — 43.6% margin\n4. **Liberty Mutual — Property Mgmt Platform** — Technology, Gold — $285/hr — 1,500 hrs — 43.2% margin\n5. **Vanguard — Telehealth Rollout** — Technology, Silver — $290/hr — 1,400 hrs — 43.1% margin\n\nAverage rate: **$299/hr** | Average margin: **43.4%** | Current engagement is within the peer band.",
+      suggestions: [
+        { label: "Why 8% and Not Higher?", inputText: "Why 8% and not higher?", flowKey: "ps-why-8-pct" },
+        { label: "Give Me Client Talking Points", inputText: "Give me client talking points", flowKey: "ps-talking-points" },
+      ],
+    },
+  },
+  "ps-below-8-scenario": {
+    thinkingDelay: 1500,
+    thinkingMessage: "Running scenario analysis...",
+    response: {
+      title: "Scenario: Below 8%",
+      content: "**If you go to 5%** (client's recent comfort zone):\n• Revised rate: **$310/hr** (vs. $319/hr at 8%)\n• Margin moves to **45.8%** — above peer average but leaves $10.80/hr on the table\n• Acceptance probability: **~94%**\n• Leaves **$12,960** in annual revenue on the table (1,200 hrs × $10.80)\n\n**If you go to 3%:**\n• Revised rate: **$304/hr**\n• Margin moves to **44.7%** — barely above current peer average\n• You'd need a **10%+ increase** next cycle to reach top-quartile positioning\n\n**The risk:** Below 5%, the model flags this engagement as a **multi-cycle margin trap** — each under-priced cycle makes the next correction steeper and harder to get accepted.",
+      suggestions: [
+        { label: "Why 8% and Not Higher?", inputText: "Why 8% and not higher?", flowKey: "ps-why-8-pct" },
+        { label: "Give Me Client Talking Points", inputText: "Give me client talking points", flowKey: "ps-talking-points" },
+        { label: "Draft Client Email", inputText: "Draft a client email", flowKey: "ps-draft-email" },
+      ],
+    },
+  },
+  "ps-talking-points": {
+    thinkingDelay: 1800,
+    thinkingMessage: "Generating talking points...",
+    response: {
+      title: "Client Talking Points",
+      content: "**Value-based justification:**\n• Our team's 5-year history with Meridian's technology landscape eliminates the 3–6 month ramp-up a new firm would require\n• The Digital Transformation Roadmap requires cross-functional expertise spanning clinical systems, data architecture, and change management — a rare combination\n\n**Market context:**\n• Technology consulting rate increases across comparable firms average 9–12% this cycle\n• Our proposed 8% increase is below market average while retaining senior talent continuity\n\n**Scope drivers:**\n• Phase 2 planning dependencies require sustained senior architect involvement\n• EHR integration complexity has increased vendor coordination requirements by ~20% since initial scoping",
+      suggestions: [
+        { label: "Anticipate Objections", inputText: "Anticipate objections", flowKey: "ps-anticipate-objections" },
+        { label: "Draft Client Email", inputText: "Draft a client email", flowKey: "ps-draft-email" },
+      ],
+    },
+  },
+  "ps-anticipate-objections": {
+    thinkingDelay: 2200,
+    thinkingMessage: "Analyzing potential objections...",
+    response: {
+      title: "Anticipated Client Objections",
+      content: "**\"The rate increase is too steep.\"**\nResponse: The 8% adjustment is below the 9–12% industry average for Technology consulting. We've absorbed rising talent costs to keep this competitive.\n\n**\"We're evaluating other firms for Phase 2.\"**\nResponse: Transitioning consultants mid-transformation incurs significant knowledge transfer costs (typically 15–25% premium in year one). Our team's institutional knowledge of Meridian's EHR environment, security protocols, and stakeholder landscape is a non-trivial asset.\n\n**\"Can we reduce hours to offset the rate?\"**\nResponse: The 1,200-hour scope is calibrated to the roadmap deliverables. Reducing hours would require descoping workstreams — we can discuss which, but the core digital strategy and Phase 2 planning are interdependent.",
+      suggestions: [
+        { label: "Draft Client Email", inputText: "Draft a client email", flowKey: "ps-draft-email" },
+        { label: "Show Peer Comparisons", inputText: "Show peer comparisons", flowKey: "ps-similar-engagements" },
+      ],
+    },
+  },
+  "ps-draft-email": {
+    thinkingDelay: 2500,
+    thinkingMessage: "Drafting email...",
+    response: {
+      title: "Draft Client Email",
+      content: "Subject: **Engagement Rate Update — Digital Transformation Roadmap**\n\nDear [Client Contact],\n\nThank you for your continued partnership as we advance the Digital Transformation Roadmap. As we prepare for the next engagement cycle, I wanted to share the updated rate schedule.\n\nThe revised rate reflects market-aligned adjustments for Technology consulting talent and the increasing complexity of the program. We've kept this adjustment well below industry benchmarks while maintaining the depth of senior expertise your transformation requires.\n\nKey factors in the adjustment:\n• Market-standard rate corrections for specialized Technology consulting\n• Sustained senior architect involvement for Phase 2 planning\n• Expanded vendor coordination and EHR integration requirements\n\nThe overall scope and estimated hours remain unchanged at 1,200 hours.\n\nI'd welcome a brief call to walk through the details. Please let me know your availability this week.\n\nBest regards,\n[Partner Name]",
+      suggestions: [
+        { label: "Show Peer Comparisons", inputText: "Show peer comparisons", flowKey: "ps-similar-engagements" },
+        { label: "Start Over", inputText: "Start over", flowKey: "ps-start-over" },
+      ],
+    },
+  },
+  "ps-start-over": {
+    thinkingDelay: 500,
+    response: {
+      content: "Ready to analyze another aspect of this engagement's pricing.",
+      suggestions: [
+        { label: "Why 8% and Not Higher?", inputText: "Why 8% and not higher?", flowKey: "ps-why-8-pct" },
+        { label: "Give Me Client Talking Points", inputText: "Give me client talking points", flowKey: "ps-talking-points" },
+        { label: "Anticipate Objections", inputText: "Anticipate objections", flowKey: "ps-anticipate-objections" },
+      ],
+    },
+  },
+};
+
 const productLevelEtpMsg: EtpMsg = {
   id: "etp-product",
   role: "assistant",
@@ -612,7 +950,23 @@ export default function PriceReviewPage() {
   const [aiQuery, setAiQuery] = useState("");
   const [aiState, setAiState] = useState<"idle" | "thinking">("idle");
   const [aiMessages, setAiMessages] = useState<{ role: "user" | "ai"; text: string }[]>([]);
-  const tableData = useMemo(() => generateTableData(), []);
+  const [activeInstanceId, setActiveInstanceId] = useState(() => {
+    if (typeof window === "undefined") return 218;
+    const saved = localStorage.getItem("tempo-instance-id");
+    return saved ? Number(saved) : 218;
+  });
+  const tableData = useMemo(() => generateTableData(activeInstanceId), [activeInstanceId]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent).detail;
+      setActiveInstanceId(id);
+      setPage(0);
+      setSelectedRows(new Set());
+    };
+    window.addEventListener("instance-change", handler);
+    return () => window.removeEventListener("instance-change", handler);
+  }, []);
 
   const [drawerOpenRow, setDrawerOpenRow] = useState<number | null>(null);
   const [activeDrawerTab, setActiveDrawerTab] = useState<"analytics" | "details" | "explain" | "comments" | "decision-support">("explain");
@@ -623,6 +977,11 @@ export default function PriceReviewPage() {
   const etpBottomRef = useRef<HTMLDivElement>(null);
   const etpMsgIdRef = useRef(0);
   const complicationPreloadRef = useRef(false);
+  const [dsMessages, setDsMessages] = useState<DsMsg[]>([]);
+  const [dsThinking, setDsThinking] = useState(false);
+  const [dsThinkingMsg, setDsThinkingMsg] = useState<string | undefined>();
+  const dsMsgIdRef = useRef(0);
+  const dsBottomRef = useRef<HTMLDivElement>(null);
   const kpiScrollRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const revisedColRef = useRef<HTMLTableCellElement>(null);
@@ -645,7 +1004,9 @@ export default function PriceReviewPage() {
     return data;
   }, [tableData, statusFilter, layoutPartnerFilter]);
   const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-  const kpiCards = useMemo(() => computeKpis(filteredData), [filteredData]);
+  const isPS = activeInstanceId === 415;
+  const activeColumns = isPS ? psColumns : columns;
+  const kpiCards = useMemo(() => isPS ? computePsKpis(filteredData) : computeKpis(filteredData), [filteredData, isPS]);
 
   const drawerRow = drawerOpenRow !== null ? tableData[drawerOpenRow] : null;
 
@@ -654,12 +1015,50 @@ export default function PriceReviewPage() {
   }, [etpMessages, etpThinking]);
 
   useEffect(() => {
+    dsBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [dsMessages, dsThinking]);
+
+  useEffect(() => {
+    if (drawerOpenRow === null) {
+      setDsMessages([]);
+      setDsThinking(false);
+      dsMsgIdRef.current = 0;
+      return;
+    }
+    if (!isPS || drawerOpenRow !== 0) {
+      setDsMessages([]);
+      setDsThinking(false);
+      dsMsgIdRef.current = 0;
+      return;
+    }
+    setDsMessages([]);
+    setDsThinking(true);
+    setDsThinkingMsg("Analyzing engagement data…");
+    dsMsgIdRef.current = 0;
+    const t = setTimeout(() => {
+      setDsMessages([{
+        id: "ds-0",
+        role: "assistant",
+        title: "Engagement Analysis",
+        content: "The Technology rate of **$295/hr** reflects current market benchmarks for senior consulting talent. Peer engagements of similar scope averaged **$291/hr** last quarter. The blended margin of **43.1%** is in line with the **43.4%** threshold — placing this engagement in the target range.",
+        suggestions: [
+          { label: "Show comparable engagements for this service", inputText: "Show comparable engagements for this service", flowKey: "ds-comparable" },
+        ],
+      }]);
+      setDsThinking(false);
+      setDsThinkingMsg(undefined);
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [drawerOpenRow, isPS]);
+
+  useEffect(() => {
     if (complicationPreloadRef.current) {
       complicationPreloadRef.current = false;
       return;
     }
+    const activeMsg = isPS && drawerOpenRow === 0 ? psInitialEtpMsg : initialEtpMsg;
     if (drawerOpenRow === null) {
-      setEtpMessages([initialEtpMsg]);
+      setEtpMessages([activeMsg]);
       setEtpThinking(false);
       etpMsgIdRef.current = 0;
       return;
@@ -669,12 +1068,12 @@ export default function PriceReviewPage() {
     setEtpThinkingMsg("Loading price explanation…");
     etpMsgIdRef.current = 0;
     const t = setTimeout(() => {
-      setEtpMessages([initialEtpMsg]);
+      setEtpMessages([activeMsg]);
       setEtpThinking(false);
       setEtpThinkingMsg(undefined);
     }, 1500);
     return () => clearTimeout(t);
-  }, [drawerOpenRow]);
+  }, [drawerOpenRow, isPS]);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -798,7 +1197,7 @@ export default function PriceReviewPage() {
   const handleEtpChip = (chip: EtpSuggestion) => {
     const userMsg: EtpMsg = { id: `etp-${++etpMsgIdRef.current}`, role: "user", content: chip.inputText };
     setEtpMessages((prev) => [...prev, userMsg]);
-    const flow = etpFlows[chip.flowKey];
+    const flow = (isPS && drawerOpenRow === 0 ? psEtpFlows[chip.flowKey] : null) || etpFlows[chip.flowKey];
     if (!flow) return;
     setEtpThinking(true);
     setEtpThinkingMsg(flow.thinkingMessage);
@@ -810,7 +1209,22 @@ export default function PriceReviewPage() {
     }, flow.thinkingDelay);
   };
 
-  const totalMinWidth = columns.reduce((sum, c) => sum + c.width, 0) + 100;
+  const handleDsChip = (chip: EtpSuggestion) => {
+    const userMsg: DsMsg = { id: `ds-${++dsMsgIdRef.current}`, role: "user", content: chip.inputText };
+    setDsMessages((prev) => [...prev, userMsg]);
+    const flow = dsFlows[chip.flowKey];
+    if (!flow) return;
+    setDsThinking(true);
+    setDsThinkingMsg(flow.thinkingMessage);
+    setTimeout(() => {
+      const response: DsMsg = { ...flow.response, id: `ds-${++dsMsgIdRef.current}`, role: "assistant" };
+      setDsMessages((prev) => [...prev, response]);
+      setDsThinking(false);
+      setDsThinkingMsg(undefined);
+    }, flow.thinkingDelay);
+  };
+
+  const totalMinWidth = activeColumns.reduce((sum, c) => sum + c.width, 0) + 100;
 
   const toggleRow = (globalIdx: number) => {
     setSelectedRows((prev) => {
@@ -981,43 +1395,14 @@ export default function PriceReviewPage() {
         {/* Main content */}
         <Box data-tour="tempo-full-page" sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", bgcolor: "#f8f8f8", position: "relative" }}>
           <Box sx={{ px: 3, pt: 2.5, pb: 1.5, bgcolor: "rgba(0,0,0,0.04)", display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Typography variant="h4" sx={{ fontWeight: 400, color: "#00446a", letterSpacing: "0.25px", lineHeight: "42px" }}>
-              Price Review
-            </Typography>
-            <Tooltip
-              title={`DEMO TALK TRACK — REVIEW UNITS\n\nEach row in this table is a "review unit" — the thing being priced. A review unit is a combination of attributes from your data that uniquely identifies something you need to price.\n\n• IN THIS INSTANCE: The review unit is an engagement, made up of:\n  – Client (e.g. Meridian Health Systems)\n  – Project (e.g. Annual Audit FY26)\n  – Service Line (e.g. Audit & Assurance)\n\nThat combination is what makes each row unique. One client can have multiple engagements, each priced independently.\n\n• IN ANOTHER INSTANCE it might be:\n  – Customer + Product + Region (distribution)\n  – SKU + Plant + Channel (manufacturing)\n  – Account + Contract + Term (SaaS)\n\nTempo adapts to your review unit — the columns, KPIs, model inputs, and recommendations all reshape around whatever your unit is.`}
-              arrow
-              placement="bottom-start"
-              slotProps={{
-                tooltip: {
-                  sx: {
-                    bgcolor: "white",
-                    color: "#333",
-                    border: "1px solid #D97C14",
-                    fontSize: 11,
-                    lineHeight: 1.6,
-                    maxWidth: 340,
-                    p: 2,
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-                    whiteSpace: "pre-line",
-                  },
-                },
-                arrow: { sx: { color: "white", "&::before": { border: "1px solid #D97C14" } } },
-              }}
-            >
-              <Box
-                sx={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: "3px",
-                  bgcolor: "rgba(0,0,0,0.06)",
-                  cursor: "pointer",
-                  flexShrink: 0,
-                  "&:hover": { bgcolor: "rgba(0,0,0,0.12)" },
-                  transition: "background-color 0.15s",
-                }}
-              />
-            </Tooltip>
+            <Box sx={{ display: "flex", alignItems: "baseline", gap: 1.5 }}>
+              <Typography variant="h4" sx={{ fontWeight: 400, color: "#00446a", letterSpacing: "0.25px", lineHeight: "42px" }}>
+                Price Review
+              </Typography>
+              <Typography sx={{ fontSize: 14, color: "rgba(0,0,0,0.4)", fontWeight: 400 }}>
+                {({ 218: "Fixed Fee Model", 362: "Tax Recommendation Review", 651: "Tax Engagement Fees Review", 415: "Professional Services", 103: "Fixed Fee Model (UAT)", 146: "Tax Engagement Fees (UAT)", 203: "Tax Recommendation (UAT)" } as Record<number, string>)[activeInstanceId] || ""}
+              </Typography>
+            </Box>
           </Box>
 
           {/* KPI Cards */}
@@ -1116,8 +1501,8 @@ export default function PriceReviewPage() {
                     />
                   </TableCell>
                   <TableCell sx={{ ...headerCellSx, bgcolor: "#fafafa", width: 38, minWidth: 38 }} />
-                  {columns.map((col) => (
-                    <TableCell key={col.key} align={col.align || "left"} ref={col.key === "revisedFixedFee" ? revisedColRef : undefined} sx={{ ...headerCellSx, bgcolor: "#fafafa", width: col.width, minWidth: col.width, ...(col.label.includes("\n") && { whiteSpace: "pre-line", lineHeight: 1.3 }) }}>
+                  {activeColumns.map((col) => (
+                    <TableCell key={col.key} align={col.align || "left"} ref={col.key === "revisedFixedFee" || col.key === "revisedBillRate" ? revisedColRef : undefined} sx={{ ...headerCellSx, bgcolor: "#fafafa", width: col.width, minWidth: col.width, ...(col.label.includes("\n") && { whiteSpace: "pre-line", lineHeight: 1.3 }) }}>
                       {col.key === "status" ? (
                         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           <span>{col.label}</span>
@@ -1140,9 +1525,9 @@ export default function PriceReviewPage() {
                       <Checkbox size="small" sx={{ p: 0, color: isSelected ? "#00446a" : undefined, "&.Mui-checked": { color: "#00446a" } }} checked={isSelected} onChange={() => toggleRow(globalIdx)} />
                     </TableCell>
                     <TableCell sx={{ ...bodyCellSx, width: 38, minWidth: 38 }}>
-                      <AddCircleOutlineIcon onClick={() => { setDrawerOpenRow(drawerOpenRow === globalIdx ? null : globalIdx); setActiveDrawerTab("explain"); setAnalyticsPreload(undefined); }} sx={{ fontSize: 20, color: drawerOpenRow === globalIdx ? "#00446a" : "rgba(0,0,0,0.4)", cursor: "pointer" }} />
+                      <AddCircleOutlineIcon onClick={() => { setDrawerOpenRow(drawerOpenRow === globalIdx ? null : globalIdx); setActiveDrawerTab(isPS && globalIdx === 0 ? "decision-support" : "explain"); setAnalyticsPreload(undefined); }} sx={{ fontSize: 20, color: drawerOpenRow === globalIdx ? "#00446a" : "rgba(0,0,0,0.4)", cursor: "pointer" }} />
                     </TableCell>
-                    {columns.map((col) => (
+                    {activeColumns.map((col) => (
                       <TableCell key={col.key} align={col.align || "left"} sx={bodyCellSx}>
                         {col.render ? col.render(row) : (row as unknown as Record<string, unknown>)[col.key] as React.ReactNode}
                       </TableCell>
@@ -1353,7 +1738,7 @@ export default function PriceReviewPage() {
               {([
                 { key: "explain" as const, icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} />, tooltip: "Explain The Price" },
                 { key: "analytics" as const, icon: <InsightsIcon sx={{ fontSize: 20 }} />, tooltip: "AI Analytics" },
-                { key: "decision-support" as const, icon: <BarChartIcon sx={{ fontSize: 20 }} />, tooltip: "Price History" },
+                { key: "decision-support" as const, icon: <BarChartIcon sx={{ fontSize: 20 }} />, tooltip: isPS && drawerOpenRow === 0 ? "Decision Support" : "Price History" },
                 { key: "details" as const, icon: <InfoOutlinedIcon sx={{ fontSize: 20 }} />, tooltip: "Engagement Details" },
                 { key: "comments" as const, icon: <ChatBubbleOutlineIcon sx={{ fontSize: 20 }} />, tooltip: "Comments" },
               ]).map((tab) => (
@@ -1381,7 +1766,7 @@ export default function PriceReviewPage() {
               {/* Drawer header */}
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2.5, py: 1.5, borderBottom: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
                 <Typography sx={{ fontSize: 16, fontWeight: 600, color: "#333" }}>
-                  {activeDrawerTab === "analytics" ? "AI Analytics" : activeDrawerTab === "decision-support" ? "Price History" : activeDrawerTab === "details" ? "Engagement Details" : activeDrawerTab === "explain" ? "Explain The Price" : "Comments"}
+                  {activeDrawerTab === "analytics" ? "AI Analytics" : activeDrawerTab === "decision-support" ? (isPS && drawerOpenRow === 0 ? "Decision Support" : "Price History") : activeDrawerTab === "details" ? "Engagement Details" : activeDrawerTab === "explain" ? "Explain The Price" : "Comments"}
                 </Typography>
                 <IconButton size="small" onClick={() => setDrawerOpenRow(null)} sx={{ color: "rgba(0,0,0,0.4)" }}>
                   <CloseIcon sx={{ fontSize: 20 }} />
@@ -1408,48 +1793,131 @@ export default function PriceReviewPage() {
 
                 {/* Decision Support Tab */}
                 {activeDrawerTab === "decision-support" && (
-                  <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                    <Box sx={{ display: "flex", borderBottom: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
-                      {([
-                        { key: "price-history" as const, label: "Price History" },
-                        { key: "rec-history" as const, label: "Recommendations" },
-                      ]).map((sv) => (
-                        <Box
-                          key={sv.key}
-                          onClick={() => setDecisionSupportView(sv.key)}
-                          sx={{
-                            flex: 1,
-                            py: 1.25,
-                            textAlign: "center",
-                            cursor: "pointer",
-                            borderBottom: decisionSupportView === sv.key ? "2px solid #00446a" : "2px solid transparent",
-                            color: decisionSupportView === sv.key ? "#00446a" : "rgba(0,0,0,0.4)",
-                            fontWeight: decisionSupportView === sv.key ? 600 : 400,
-                            fontSize: 12,
-                            fontFamily: "Inter, sans-serif",
-                            transition: "all 0.15s ease",
-                            "&:hover": { color: "#00446a", bgcolor: "rgba(0,68,106,0.04)" },
-                          }}
-                        >
-                          {sv.label}
-                        </Box>
-                      ))}
+                  isPS && drawerOpenRow === 0 ? (
+                    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                      <Box sx={{ flex: 1, overflowY: "auto", p: 2, display: "flex", flexDirection: "column" }}>
+                        {dsMessages.map((msg) => (
+                          <Box key={msg.id} sx={{ mb: 1.5, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                            <Box sx={{ maxWidth: "90%", px: 1.75, py: 1.25, borderRadius: msg.role === "user" ? "12px 12px 2px 12px" : "12px 12px 12px 2px", bgcolor: msg.role === "user" ? "#00446a" : "rgba(0,0,0,0.04)", color: msg.role === "user" ? "white" : "#333" }}>
+                              {msg.title && <Typography sx={{ fontSize: 12, fontWeight: 700, color: msg.role === "user" ? "rgba(255,255,255,0.7)" : "#00446a", mb: 0.5 }}>{msg.title}</Typography>}
+                              <Typography sx={{ fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-line" }}>{renderBold(msg.content)}</Typography>
+                              {msg.table && (
+                                <Box sx={{ mt: 1.5, borderRadius: "6px", overflow: "hidden", border: "1px solid rgba(0,0,0,0.12)" }}>
+                                  <Table size="small">
+                                    <TableHead>
+                                      <TableRow sx={{ bgcolor: "rgba(0,68,106,0.06)" }}>
+                                        {msg.table.headers.map((h, hi) => (
+                                          <TableCell key={hi} sx={{ fontSize: 11, fontWeight: 700, color: "#00446a", py: 0.75, px: 1.25, borderBottom: "1px solid rgba(0,0,0,0.12)" }}>{h}</TableCell>
+                                        ))}
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {msg.table.rows.map((row, ri) => (
+                                        <TableRow key={ri} sx={{ "&:last-child td": { borderBottom: 0 } }}>
+                                          {row.map((cell, ci) => (
+                                            <TableCell key={ci} sx={{ fontSize: 12, py: 0.75, px: 1.25, color: "#333", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>{cell}</TableCell>
+                                          ))}
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </Box>
+                              )}
+                              {msg.chart === "rate-history" && (
+                                <Box sx={{ mt: 1.5 }}>
+                                  <ResponsiveContainer width="100%" height={200}>
+                                    <LineChart data={psRateHistoryData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                      <XAxis dataKey="date" fontSize={10} tick={{ fill: "rgba(0,0,0,0.5)" }} angle={-45} textAnchor="end" height={50} />
+                                      <YAxis fontSize={10} tick={{ fill: "rgba(0,0,0,0.5)" }} tickFormatter={(v: number) => `$${v}`} domain={[260, 330]} width={40} />
+                                      <RechartsTooltip contentStyle={{ fontSize: 11, borderRadius: 6 }} formatter={(value) => [`$${Number(value)}/hr`, "Rate"]} />
+                                      <Line type="monotone" dataKey="rate" stroke="#00446a" strokeWidth={2.5} dot={(props: Record<string, unknown>) => { const idx = props.index as number; const entry = psRateHistoryData[idx]; const has = !!(entry as Record<string, unknown>)?.annotation; return <circle key={idx} cx={props.cx as number} cy={props.cy as number} r={has ? 6 : 4} fill={has ? "#f08b1d" : "#00446a"} stroke="white" strokeWidth={has ? 2 : 0} />; }} activeDot={{ r: 6 }} />
+                                    </LineChart>
+                                  </ResponsiveContainer>
+                                  <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
+                                    {psRateHistoryData.filter((d) => d.annotation).map((d, i) => (
+                                      <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#f08b1d", flexShrink: 0 }} />
+                                        <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.6)" }}><strong>{d.date}</strong>: {d.annotation}</Typography>
+                                      </Box>
+                                    ))}
+                                  </Box>
+                                </Box>
+                              )}
+                            </Box>
+                          </Box>
+                        ))}
+                        {dsThinking && (
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.75, py: 1, bgcolor: "rgba(0,0,0,0.04)", borderRadius: "12px 12px 12px 2px", alignSelf: "flex-start", mb: 1.5 }}>
+                            <CircularProgress size={14} sx={{ color: "#00446a" }} />
+                            <Typography sx={{ fontSize: 13, color: "rgba(0,0,0,0.5)" }}>{dsThinkingMsg || "Thinking…"}</Typography>
+                          </Box>
+                        )}
+                        {!dsThinking && (() => {
+                          const last = [...dsMessages].reverse().find((m) => m.role === "assistant");
+                          if (!last?.suggestions?.length) return null;
+                          return (
+                            <Box sx={{ py: 1 }}>
+                              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                                {last.suggestions.map((s) => (
+                                  <Chip key={s.label} label={s.label} size="small" clickable onClick={() => handleDsChip(s)} sx={{ fontSize: 11, height: 28, borderRadius: "14px", bgcolor: "rgba(0,68,106,0.06)", border: "1px solid rgba(0,68,106,0.2)", color: "#00446a", fontWeight: 500, "&:hover": { bgcolor: "rgba(0,68,106,0.12)" } }} />
+                                ))}
+                              </Box>
+                            </Box>
+                          );
+                        })()}
+                        <div ref={dsBottomRef} />
+                      </Box>
+                      <Box sx={{ px: 2, py: 1, borderTop: "1px solid rgba(0,0,0,0.06)", textAlign: "center", flexShrink: 0 }}>
+                        <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.35)", fontStyle: "italic" }}>
+                          Data sourced from this review cycle. Context is engagement-specific.
+                        </Typography>
+                      </Box>
                     </Box>
-                    <Box
-                      key={decisionSupportView}
-                      sx={{
-                        flex: 1,
-                        overflowY: "auto",
-                        animation: "drawerContentIn 0.35s ease",
-                        "@keyframes drawerContentIn": {
-                          from: { opacity: 0, transform: "translateY(8px)" },
-                          to: { opacity: 1, transform: "translateY(0)" },
-                        },
-                      }}
-                    >
-                      {decisionSupportView === "price-history" ? <PriceHistoryView /> : <RecHistoryView />}
+                  ) : (
+                    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                      <Box sx={{ display: "flex", borderBottom: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
+                        {([
+                          { key: "price-history" as const, label: "Price History" },
+                          { key: "rec-history" as const, label: "Recommendations" },
+                        ]).map((sv) => (
+                          <Box
+                            key={sv.key}
+                            onClick={() => setDecisionSupportView(sv.key)}
+                            sx={{
+                              flex: 1,
+                              py: 1.25,
+                              textAlign: "center",
+                              cursor: "pointer",
+                              borderBottom: decisionSupportView === sv.key ? "2px solid #00446a" : "2px solid transparent",
+                              color: decisionSupportView === sv.key ? "#00446a" : "rgba(0,0,0,0.4)",
+                              fontWeight: decisionSupportView === sv.key ? 600 : 400,
+                              fontSize: 12,
+                              fontFamily: "Inter, sans-serif",
+                              transition: "all 0.15s ease",
+                              "&:hover": { color: "#00446a", bgcolor: "rgba(0,68,106,0.04)" },
+                            }}
+                          >
+                            {sv.label}
+                          </Box>
+                        ))}
+                      </Box>
+                      <Box
+                        key={decisionSupportView}
+                        sx={{
+                          flex: 1,
+                          overflowY: "auto",
+                          animation: "drawerContentIn 0.35s ease",
+                          "@keyframes drawerContentIn": {
+                            from: { opacity: 0, transform: "translateY(8px)" },
+                            to: { opacity: 1, transform: "translateY(0)" },
+                          },
+                        }}
+                      >
+                        {decisionSupportView === "price-history" ? <PriceHistoryView /> : <RecHistoryView />}
+                      </Box>
                     </Box>
-                  </Box>
+                  )
                 )}
 
                 {/* Engagement Details Tab */}

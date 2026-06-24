@@ -26,6 +26,20 @@ export interface RowData {
   custAcceptedAdminFee: number | null;
   finalTotalFee: number | null;
   finalTotalPct: number | null;
+  // PS-specific fields
+  qtyHrs?: number;
+  estDays?: number;
+  billRate?: number;
+  extFees?: number;
+  vcPerHr?: number;
+  marginPct?: number;
+  recBillRate?: number;
+  recExtFees?: number;
+  recMarginPct?: number;
+  revisedBillRate?: number;
+  revisedExtFees?: number;
+  revisedMarginPct?: number;
+  revisedVcPerHr?: number;
 }
 
 const partners = ["M. Richardson", "S. Goldstein", "J. Whitfield", "R. Patel", "K. Donovan", "A. Bernstein", "T. Nakamura", "L. Chen"];
@@ -34,6 +48,7 @@ const retentionBuckets = ["Platinum", "Gold", "Silver", "Bronze"];
 const renewalStatuses = ["Active", "Up for Renewal", "Renewed", "At Risk"];
 const commStatuses = ["Not Started", "Sent", "Discussed", "Accepted"];
 const reasons = ["Market Rate Adj", "Scope Expansion", "Inflation Adj", "Retention Risk", "Complexity Increase", "New Regulations", "Staff Reallocation", ""];
+const psReasons = ["Rate Card Realignment", "Scope Expansion", "Staffing Mix Change", "Retention Risk", "Deliverable Increase", "Resource Escalation", "Market Rate Adj", ""];
 
 interface Engagement {
   clientName: string;
@@ -44,6 +59,9 @@ interface Engagement {
   currentAdminFee: number;
   scopeChangePct: number;
   recPriceIncreasePct: number;
+  qtyHrs?: number;
+  billRate?: number;
+  vcPerHr?: number;
 }
 
 const engagements: Engagement[] = [
@@ -151,13 +169,75 @@ const engagements: Engagement[] = [
   { clientName: "Keystone Industries", projectName: "AP/AR Management", serviceLine: "Accounting", clientTenure: "11 Years", currentFixedFee: 65000, currentAdminFee: 6500, scopeChangePct: 0, recPriceIncreasePct: 10 },
 ];
 
+const psPartners = ["D. McAllister", "C. Vasquez", "H. Brennan", "N. Okafor", "J. Lindström", "P. Ashworth", "M. Delacroix", "S. Reeves"];
+const psServiceLines = ["Strategy", "Technology", "Operations", "Human Capital", "Risk & Compliance", "Digital", "Change Management", "Data & Analytics"];
+
+const psEngagements: Engagement[] = [
+  { clientName: "Meridian Health Systems", projectName: "Digital Transformation Roadmap", serviceLine: "Technology", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 8, qtyHrs: 1200, billRate: 295, vcPerHr: 168 },
+  { clientName: "Meridian Health Systems", projectName: "EHR Migration — Phase 2", serviceLine: "Technology", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 2400, billRate: 310, vcPerHr: 175 },
+  { clientName: "Meridian Health Systems", projectName: "Workforce Planning", serviceLine: "Human Capital", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 6, qtyHrs: 640, billRate: 265, vcPerHr: 155 },
+  { clientName: "Apex Capital Partners", projectName: "Operating Model Redesign", serviceLine: "Strategy", clientTenure: "3 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 11, qtyHrs: 1600, billRate: 350, vcPerHr: 195 },
+  { clientName: "Apex Capital Partners", projectName: "Portfolio Analytics Platform", serviceLine: "Data & Analytics", clientTenure: "3 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 960, billRate: 285, vcPerHr: 162 },
+  { clientName: "Apex Capital Partners", projectName: "Post-Merger Integration", serviceLine: "Change Management", clientTenure: "3 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 1800, billRate: 320, vcPerHr: 180 },
+  { clientName: "Greenfield Manufacturing", projectName: "Supply Chain Optimization", serviceLine: "Operations", clientTenure: "8 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 8, qtyHrs: 1100, billRate: 275, vcPerHr: 158 },
+  { clientName: "Greenfield Manufacturing", projectName: "ERP Implementation", serviceLine: "Technology", clientTenure: "8 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 12, qtyHrs: 3200, billRate: 305, vcPerHr: 172 },
+  { clientName: "Greenfield Manufacturing", projectName: "Lean Six Sigma Program", serviceLine: "Operations", clientTenure: "8 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 7, qtyHrs: 480, billRate: 250, vcPerHr: 145 },
+  { clientName: "Summit Healthcare Group", projectName: "Revenue Cycle Transformation", serviceLine: "Operations", clientTenure: "6 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 2000, billRate: 325, vcPerHr: 185 },
+  { clientName: "Summit Healthcare Group", projectName: "Compliance Framework Build", serviceLine: "Risk & Compliance", clientTenure: "6 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 880, billRate: 290, vcPerHr: 165 },
+  { clientName: "Summit Healthcare Group", projectName: "Patient Experience Strategy", serviceLine: "Strategy", clientTenure: "6 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 8, qtyHrs: 520, billRate: 340, vcPerHr: 190 },
+  { clientName: "Blackstone River Capital", projectName: "Due Diligence Accelerator", serviceLine: "Strategy", clientTenure: "4 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 1400, billRate: 365, vcPerHr: 200 },
+  { clientName: "Blackstone River Capital", projectName: "Data Warehouse Modernization", serviceLine: "Data & Analytics", clientTenure: "4 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 13, qtyHrs: 1600, billRate: 295, vcPerHr: 170 },
+  { clientName: "Blackstone River Capital", projectName: "Regulatory Readiness", serviceLine: "Risk & Compliance", clientTenure: "4 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 720, billRate: 310, vcPerHr: 178 },
+  { clientName: "Pinnacle Consumer Brands", projectName: "Go-to-Market Strategy", serviceLine: "Strategy", clientTenure: "7 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 800, billRate: 345, vcPerHr: 192 },
+  { clientName: "Pinnacle Consumer Brands", projectName: "D2C Platform Build", serviceLine: "Digital", clientTenure: "7 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 2200, billRate: 280, vcPerHr: 160 },
+  { clientName: "Pinnacle Consumer Brands", projectName: "Org Design & Talent", serviceLine: "Human Capital", clientTenure: "7 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 7, qtyHrs: 560, billRate: 260, vcPerHr: 150 },
+  { clientName: "Liberty Mutual Properties", projectName: "Property Mgmt Platform", serviceLine: "Technology", clientTenure: "10 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 1500, billRate: 285, vcPerHr: 162 },
+  { clientName: "Liberty Mutual Properties", projectName: "Risk Assessment Model", serviceLine: "Risk & Compliance", clientTenure: "10 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 900, billRate: 300, vcPerHr: 172 },
+  { clientName: "NextGen Life Sciences", projectName: "Clinical Trial Analytics", serviceLine: "Data & Analytics", clientTenure: "2 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 11, qtyHrs: 1300, billRate: 310, vcPerHr: 175 },
+  { clientName: "NextGen Life Sciences", projectName: "Regulatory Submission Support", serviceLine: "Risk & Compliance", clientTenure: "2 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 960, billRate: 295, vcPerHr: 168 },
+  { clientName: "NextGen Life Sciences", projectName: "Lab Digitization Program", serviceLine: "Digital", clientTenure: "2 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 2100, billRate: 275, vcPerHr: 158 },
+  { clientName: "Harbor View Real Estate", projectName: "Investor Portal Redesign", serviceLine: "Digital", clientTenure: "3 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 840, billRate: 270, vcPerHr: 155 },
+  { clientName: "Harbor View Real Estate", projectName: "Market Expansion Strategy", serviceLine: "Strategy", clientTenure: "3 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 600, billRate: 335, vcPerHr: 188 },
+  { clientName: "Cascade Food Group", projectName: "Procurement Optimization", serviceLine: "Operations", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 11, qtyHrs: 780, billRate: 265, vcPerHr: 152 },
+  { clientName: "Cascade Food Group", projectName: "Food Safety Compliance", serviceLine: "Risk & Compliance", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 8, qtyHrs: 520, billRate: 280, vcPerHr: 160 },
+  { clientName: "Cascade Food Group", projectName: "BI Dashboard Suite", serviceLine: "Data & Analytics", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 640, billRate: 275, vcPerHr: 158 },
+  { clientName: "Vanguard Senior Living", projectName: "Care Model Innovation", serviceLine: "Strategy", clientTenure: "4 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 920, billRate: 330, vcPerHr: 185 },
+  { clientName: "Vanguard Senior Living", projectName: "Staff Retention Program", serviceLine: "Human Capital", clientTenure: "4 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 8, qtyHrs: 680, billRate: 255, vcPerHr: 148 },
+  { clientName: "Vanguard Senior Living", projectName: "Telehealth Rollout", serviceLine: "Technology", clientTenure: "4 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 1400, billRate: 290, vcPerHr: 165 },
+  { clientName: "TechVault Solutions", projectName: "Cloud Migration Strategy", serviceLine: "Technology", clientTenure: "2 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 1800, billRate: 305, vcPerHr: 172 },
+  { clientName: "TechVault Solutions", projectName: "Cybersecurity Assessment", serviceLine: "Risk & Compliance", clientTenure: "2 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 640, billRate: 315, vcPerHr: 180 },
+  { clientName: "TechVault Solutions", projectName: "DevOps Transformation", serviceLine: "Digital", clientTenure: "2 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 1200, billRate: 285, vcPerHr: 162 },
+  { clientName: "Cornerstone Medical", projectName: "Clinical Ops Redesign", serviceLine: "Operations", clientTenure: "7 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 1500, billRate: 300, vcPerHr: 170 },
+  { clientName: "Cornerstone Medical", projectName: "Leadership Development", serviceLine: "Human Capital", clientTenure: "7 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 7, qtyHrs: 440, billRate: 255, vcPerHr: 148 },
+  { clientName: "Cornerstone Medical", projectName: "HIPAA Modernization", serviceLine: "Risk & Compliance", clientTenure: "7 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 720, billRate: 295, vcPerHr: 168 },
+  { clientName: "Pacific Rim Ventures", projectName: "Market Entry Strategy", serviceLine: "Strategy", clientTenure: "2 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 1400, billRate: 355, vcPerHr: 198 },
+  { clientName: "Pacific Rim Ventures", projectName: "Cross-Border Ops Setup", serviceLine: "Operations", clientTenure: "2 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 1100, billRate: 280, vcPerHr: 160 },
+  { clientName: "Pacific Rim Ventures", projectName: "Investment Analytics", serviceLine: "Data & Analytics", clientTenure: "2 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 800, billRate: 290, vcPerHr: 165 },
+  { clientName: "Redwood Hospitality", projectName: "Guest Experience Platform", serviceLine: "Digital", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 1300, billRate: 270, vcPerHr: 155 },
+  { clientName: "Redwood Hospitality", projectName: "Revenue Management Strategy", serviceLine: "Strategy", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 720, billRate: 330, vcPerHr: 185 },
+  { clientName: "Redwood Hospitality", projectName: "Workforce Scheduling System", serviceLine: "Human Capital", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 8, qtyHrs: 560, billRate: 260, vcPerHr: 150 },
+  { clientName: "National Care Alliance", projectName: "Value-Based Care Transition", serviceLine: "Strategy", clientTenure: "9 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 2400, billRate: 340, vcPerHr: 190 },
+  { clientName: "National Care Alliance", projectName: "Population Health Analytics", serviceLine: "Data & Analytics", clientTenure: "9 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 1200, billRate: 295, vcPerHr: 168 },
+  { clientName: "National Care Alliance", projectName: "Change Readiness Program", serviceLine: "Change Management", clientTenure: "9 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 8, qtyHrs: 680, billRate: 275, vcPerHr: 158 },
+  { clientName: "Trident PE Group", projectName: "Portfolio Co. Benchmarking", serviceLine: "Strategy", clientTenure: "6 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 1000, billRate: 360, vcPerHr: 200 },
+  { clientName: "Trident PE Group", projectName: "Integration Playbook", serviceLine: "Change Management", clientTenure: "6 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 880, billRate: 300, vcPerHr: 170 },
+  { clientName: "Trident PE Group", projectName: "Value Creation Dashboard", serviceLine: "Data & Analytics", clientTenure: "6 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 720, billRate: 285, vcPerHr: 162 },
+  { clientName: "Paramount Hotel Group", projectName: "Brand Strategy Refresh", serviceLine: "Strategy", clientTenure: "8 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 9, qtyHrs: 860, billRate: 335, vcPerHr: 188 },
+  { clientName: "Paramount Hotel Group", projectName: "Loyalty Platform Build", serviceLine: "Digital", clientTenure: "8 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 1800, billRate: 275, vcPerHr: 158 },
+  { clientName: "Paramount Hotel Group", projectName: "Labor Model Optimization", serviceLine: "Operations", clientTenure: "8 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 8, qtyHrs: 600, billRate: 270, vcPerHr: 155 },
+];
+
 function seededRandom(seed: number) {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
 }
 
-export function generateTableData(): RowData[] {
-  return engagements.map((eng, i) => {
+export function generateTableData(instanceId?: number): RowData[] {
+  const isPS = instanceId === 415;
+  const sourceEngagements = isPS ? psEngagements : engagements;
+  const sourcePartners = isPS ? psPartners : partners;
+  const sourceReasons = isPS ? psReasons : reasons;
+  return sourceEngagements.map((eng, i) => {
     const seed = i + 42;
     const r1 = seededRandom(seed);
     const r2 = seededRandom(seed + 100);
@@ -167,9 +247,81 @@ export function generateTableData(): RowData[] {
     const r6 = seededRandom(seed + 500);
     const r7 = seededRandom(seed + 600);
 
+    const statusIdx = r2 < 0.45 ? 0 : r2 < 0.8 ? 1 : 2;
+    const isFinalized = statusIdx >= 1;
+    const commIdx = isFinalized ? (r6 < 0.4 ? 3 : r6 < 0.7 ? 2 : 1) : (r6 < 0.5 ? 0 : 1);
+
+    const base = {
+      hasComments: r3 < 0.3,
+      status: statuses[statusIdx],
+      partnerName: sourcePartners[Math.floor(r4 * sourcePartners.length)],
+      clientName: eng.clientName,
+      projectName: eng.projectName,
+      serviceLine: eng.serviceLine,
+      clientTenure: eng.clientTenure,
+      retentionBucket: retentionBuckets[Math.floor(r5 * retentionBuckets.length)],
+      clientRenewalStatus: renewalStatuses[Math.floor(r2 * renewalStatuses.length)],
+      revisionReason: sourceReasons[Math.floor(r3 * sourceReasons.length)],
+      clientCommStatus: commStatuses[commIdx],
+    };
+
+    if (isPS && eng.qtyHrs && eng.billRate && eng.vcPerHr) {
+      const qtyHrs = eng.qtyHrs;
+      const estDays = Math.round(qtyHrs / 8);
+      const billRate = eng.billRate;
+      const extFees = qtyHrs * billRate;
+      const vcPerHr = eng.vcPerHr;
+      const marginPct = Math.round(((billRate - vcPerHr) / billRate) * 1000) / 10;
+
+      const recBillRate = Math.round(billRate * (1 + eng.recPriceIncreasePct / 100));
+      const recExtFees = qtyHrs * recBillRate;
+      const recMarginPct = Math.round(((recBillRate - vcPerHr) / recBillRate) * 1000) / 10;
+
+      const revisedAdjust = r1 < 0.3 ? -0.02 : r1 < 0.6 ? 0 : 0.01;
+      const revisedBillRate = Math.round(recBillRate * (1 + revisedAdjust));
+      const revisedExtFees = qtyHrs * revisedBillRate;
+      const revisedVcPerHr = vcPerHr;
+      const revisedMarginPct = Math.round(((revisedBillRate - revisedVcPerHr) / revisedBillRate) * 1000) / 10;
+
+      const revisedImpact = revisedExtFees - extFees;
+      const impactDelta = revisedExtFees - recExtFees;
+
+      return {
+        ...base,
+        currentFixedFee: extFees,
+        scopeChangePct: 0,
+        fixedFeeAfterScope: extFees,
+        recPriceIncreasePct: eng.recPriceIncreasePct,
+        recFixedFee: recExtFees,
+        revisedFixedFee: revisedExtFees,
+        revisedPriceIncreasePct: Math.round(((revisedBillRate - billRate) / billRate) * 1000) / 10,
+        currentAdminFee: 0,
+        revisedAdminFee: 0,
+        revisedTotalFee: revisedExtFees,
+        revisedImpact,
+        impactDelta,
+        custAcceptedFixedFee: isFinalized ? (r7 < 0.7 ? revisedExtFees : Math.round(revisedExtFees * 0.98)) : null,
+        custAcceptedAdminFee: null,
+        finalTotalFee: isFinalized ? (r7 < 0.7 ? revisedExtFees : Math.round(revisedExtFees * 0.98)) : null,
+        finalTotalPct: isFinalized ? Math.round(((r7 < 0.7 ? revisedExtFees : Math.round(revisedExtFees * 0.98)) - extFees) / extFees * 1000) / 10 : null,
+        qtyHrs,
+        estDays,
+        billRate,
+        extFees,
+        vcPerHr,
+        marginPct,
+        recBillRate,
+        recExtFees,
+        recMarginPct,
+        revisedBillRate,
+        revisedExtFees,
+        revisedMarginPct,
+        revisedVcPerHr,
+      };
+    }
+
     const fixedFeeAfterScope = Math.round(eng.currentFixedFee * (1 + eng.scopeChangePct / 100));
     const recFixedFee = Math.round(fixedFeeAfterScope * (1 + eng.recPriceIncreasePct / 100));
-
     const revisedAdjust = r1 < 0.3 ? -0.02 : r1 < 0.6 ? 0 : 0.01;
     const revisedFixedFee = Math.round(recFixedFee * (1 + revisedAdjust));
     const revisedPriceIncreasePct = Math.round(((revisedFixedFee - eng.currentFixedFee) / eng.currentFixedFee) * 1000) / 10;
@@ -180,25 +332,13 @@ export function generateTableData(): RowData[] {
     const recTotal = recFixedFee + Math.round(eng.currentAdminFee * (1 + eng.recPriceIncreasePct / 100));
     const impactDelta = revisedTotalFee - recTotal;
 
-    const statusIdx = r2 < 0.45 ? 0 : r2 < 0.8 ? 1 : 2;
-    const isFinalized = statusIdx >= 1;
-    const commIdx = isFinalized ? (r6 < 0.4 ? 3 : r6 < 0.7 ? 2 : 1) : (r6 < 0.5 ? 0 : 1);
-
     const custAcceptedFixedFee = isFinalized ? (r7 < 0.7 ? revisedFixedFee : Math.round(revisedFixedFee * 0.98)) : null;
     const custAcceptedAdminFee = isFinalized ? (r7 < 0.7 ? revisedAdminFee : Math.round(revisedAdminFee * 0.98)) : null;
     const finalTotalFee = custAcceptedFixedFee !== null && custAcceptedAdminFee !== null ? custAcceptedFixedFee + custAcceptedAdminFee : null;
     const finalTotalPct = finalTotalFee !== null ? Math.round(((finalTotalFee - currentTotal) / currentTotal) * 1000) / 10 : null;
 
     return {
-      hasComments: r3 < 0.3,
-      status: statuses[statusIdx],
-      partnerName: partners[Math.floor(r4 * partners.length)],
-      clientName: eng.clientName,
-      projectName: eng.projectName,
-      serviceLine: eng.serviceLine,
-      clientTenure: eng.clientTenure,
-      retentionBucket: retentionBuckets[Math.floor(r5 * retentionBuckets.length)],
-      clientRenewalStatus: renewalStatuses[Math.floor(r2 * renewalStatuses.length)],
+      ...base,
       currentFixedFee: eng.currentFixedFee,
       scopeChangePct: eng.scopeChangePct,
       fixedFeeAfterScope,
@@ -211,8 +351,6 @@ export function generateTableData(): RowData[] {
       revisedTotalFee,
       revisedImpact,
       impactDelta,
-      revisionReason: reasons[Math.floor(r3 * reasons.length)],
-      clientCommStatus: commStatuses[commIdx],
       custAcceptedFixedFee,
       custAcceptedAdminFee,
       finalTotalFee,
