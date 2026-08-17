@@ -1,6 +1,39 @@
 export interface RowData {
   hasComments: boolean;
   status: string;
+  approvalStatus: string;
+  reviewPriority: string;
+  engineOutputReason: string;
+  rootNumber: string;
+  region: string;
+  productDescription: string;
+  currentListPrice: number;
+  recPctChangeFromCurPrice: number;
+  recPrice: number;
+  revisedPrice: number;
+  revisedPriceReasonCode: string;
+  grossProfit: number;
+  recMargin35: number;
+  revisedPricePctFromCurrent: number;
+  currentCost: number;
+  ttmRevenue: number;
+  ttmQty: number;
+  ttmMarginDollar: number;
+  ttmMarginPct: number;
+  make: string;
+  model: string;
+  yearFrom: number;
+  yearTo: number;
+  competitivePrice: number | null;
+  popularity: string;
+  productTier: string;
+  priceFreezeFlag: boolean;
+  costChangeCategory: string;
+  inventoryStatus: string;
+  expectedStockoutDays: number;
+  baseCompPrice: number | null;
+  mostRecentScrapeFlag: boolean;
+  // Legacy fields for PS path and AnalyticsDrawer compatibility
   partnerName: string;
   clientName: string;
   projectName: string;
@@ -26,7 +59,6 @@ export interface RowData {
   custAcceptedAdminFee: number | null;
   finalTotalFee: number | null;
   finalTotalPct: number | null;
-  // PS-specific fields
   qtyHrs?: number;
   estDays?: number;
   billRate?: number;
@@ -42,15 +74,102 @@ export interface RowData {
   revisedVcPerHr?: number;
 }
 
-const partners = ["M. Richardson", "S. Goldstein", "J. Whitfield", "R. Patel", "K. Donovan", "A. Bernstein", "T. Nakamura", "L. Chen"];
+interface Product {
+  rootNumber: string;
+  productDescription: string;
+  make: string;
+  model: string;
+  yearFrom: number;
+  yearTo: number;
+  currentCost: number;
+  currentListPrice: number;
+  category: string;
+}
+
+const products: Product[] = [
+  { rootNumber: "BRK-1001", productDescription: "Brake Pad Set - Front", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 45.20, currentListPrice: 89.99, category: "Brakes" },
+  { rootNumber: "BRK-1002", productDescription: "Brake Pad Set - Rear", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 38.50, currentListPrice: 76.50, category: "Brakes" },
+  { rootNumber: "BRK-1003", productDescription: "Brake Rotor - Front", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 52.80, currentListPrice: 104.99, category: "Brakes" },
+  { rootNumber: "BRK-1004", productDescription: "Brake Pad Set - Front", make: "Toyota", model: "Camry", yearFrom: 2018, yearTo: 2024, currentCost: 35.60, currentListPrice: 72.50, category: "Brakes" },
+  { rootNumber: "BRK-1005", productDescription: "Brake Pad Set - Front", make: "Honda", model: "Civic", yearFrom: 2016, yearTo: 2024, currentCost: 32.40, currentListPrice: 65.99, category: "Brakes" },
+  { rootNumber: "BRK-1006", productDescription: "Brake Rotor - Front", make: "Toyota", model: "RAV4", yearFrom: 2019, yearTo: 2024, currentCost: 48.90, currentListPrice: 97.50, category: "Brakes" },
+  { rootNumber: "BRK-1007", productDescription: "Brake Caliper - Front LH", make: "Chevrolet", model: "Silverado", yearFrom: 2019, yearTo: 2024, currentCost: 78.30, currentListPrice: 155.00, category: "Brakes" },
+  { rootNumber: "BRK-1008", productDescription: "Brake Pad Set - Front", make: "BMW", model: "3 Series", yearFrom: 2019, yearTo: 2024, currentCost: 62.10, currentListPrice: 124.99, category: "Brakes" },
+  { rootNumber: "BRK-1009", productDescription: "Brake Rotor - Rear", make: "Honda", model: "CR-V", yearFrom: 2017, yearTo: 2024, currentCost: 42.30, currentListPrice: 86.50, category: "Brakes" },
+  { rootNumber: "BRK-1010", productDescription: "Brake Pad Set - Rear", make: "Nissan", model: "Altima", yearFrom: 2019, yearTo: 2024, currentCost: 30.80, currentListPrice: 62.99, category: "Brakes" },
+  { rootNumber: "FLT-2001", productDescription: "Oil Filter", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 4.20, currentListPrice: 8.99, category: "Filters" },
+  { rootNumber: "FLT-2002", productDescription: "Oil Filter", make: "Toyota", model: "Camry", yearFrom: 2018, yearTo: 2024, currentCost: 3.80, currentListPrice: 7.99, category: "Filters" },
+  { rootNumber: "FLT-2003", productDescription: "Air Filter", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 9.50, currentListPrice: 19.99, category: "Filters" },
+  { rootNumber: "FLT-2004", productDescription: "Air Filter", make: "Honda", model: "CR-V", yearFrom: 2017, yearTo: 2024, currentCost: 8.20, currentListPrice: 16.99, category: "Filters" },
+  { rootNumber: "FLT-2005", productDescription: "Cabin Air Filter", make: "Toyota", model: "RAV4", yearFrom: 2019, yearTo: 2024, currentCost: 7.40, currentListPrice: 15.50, category: "Filters" },
+  { rootNumber: "FLT-2006", productDescription: "Fuel Filter", make: "Chevrolet", model: "Silverado", yearFrom: 2019, yearTo: 2024, currentCost: 12.80, currentListPrice: 26.99, category: "Filters" },
+  { rootNumber: "FLT-2007", productDescription: "Oil Filter", make: "BMW", model: "X5", yearFrom: 2019, yearTo: 2024, currentCost: 8.90, currentListPrice: 18.50, category: "Filters" },
+  { rootNumber: "FLT-2008", productDescription: "Air Filter", make: "Nissan", model: "Altima", yearFrom: 2019, yearTo: 2024, currentCost: 7.60, currentListPrice: 15.99, category: "Filters" },
+  { rootNumber: "ENG-3001", productDescription: "Spark Plug Set (4)", make: "Toyota", model: "Camry", yearFrom: 2018, yearTo: 2024, currentCost: 18.40, currentListPrice: 37.99, category: "Engine" },
+  { rootNumber: "ENG-3002", productDescription: "Spark Plug Set (6)", make: "Ford", model: "Explorer", yearFrom: 2020, yearTo: 2024, currentCost: 28.50, currentListPrice: 58.99, category: "Engine" },
+  { rootNumber: "ENG-3003", productDescription: "Ignition Coil", make: "Honda", model: "Civic", yearFrom: 2016, yearTo: 2024, currentCost: 22.30, currentListPrice: 45.99, category: "Engine" },
+  { rootNumber: "ENG-3004", productDescription: "Serpentine Belt", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 14.80, currentListPrice: 29.99, category: "Engine" },
+  { rootNumber: "ENG-3005", productDescription: "Timing Belt Kit", make: "Honda", model: "CR-V", yearFrom: 2017, yearTo: 2024, currentCost: 48.60, currentListPrice: 98.50, category: "Engine" },
+  { rootNumber: "ENG-3006", productDescription: "Water Pump", make: "Toyota", model: "RAV4", yearFrom: 2019, yearTo: 2024, currentCost: 38.20, currentListPrice: 78.99, category: "Engine" },
+  { rootNumber: "ENG-3007", productDescription: "Thermostat", make: "Chevrolet", model: "Equinox", yearFrom: 2018, yearTo: 2024, currentCost: 11.40, currentListPrice: 23.50, category: "Engine" },
+  { rootNumber: "ENG-3008", productDescription: "Valve Cover Gasket", make: "Nissan", model: "Altima", yearFrom: 2019, yearTo: 2024, currentCost: 15.60, currentListPrice: 32.50, category: "Engine" },
+  { rootNumber: "ELC-4001", productDescription: "Alternator", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 128.50, currentListPrice: 264.99, category: "Electrical" },
+  { rootNumber: "ELC-4002", productDescription: "Starter Motor", make: "Toyota", model: "Camry", yearFrom: 2018, yearTo: 2024, currentCost: 95.20, currentListPrice: 195.00, category: "Electrical" },
+  { rootNumber: "ELC-4003", productDescription: "Alternator", make: "Honda", model: "CR-V", yearFrom: 2017, yearTo: 2024, currentCost: 118.40, currentListPrice: 242.50, category: "Electrical" },
+  { rootNumber: "ELC-4004", productDescription: "Starter Motor", make: "Chevrolet", model: "Silverado", yearFrom: 2019, yearTo: 2024, currentCost: 108.60, currentListPrice: 224.99, category: "Electrical" },
+  { rootNumber: "ELC-4005", productDescription: "Battery - Group 65", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 82.30, currentListPrice: 169.99, category: "Electrical" },
+  { rootNumber: "ELC-4006", productDescription: "Alternator", make: "BMW", model: "3 Series", yearFrom: 2019, yearTo: 2024, currentCost: 185.40, currentListPrice: 379.99, category: "Electrical" },
+  { rootNumber: "ELC-4007", productDescription: "Starter Motor", make: "Hyundai", model: "Tucson", yearFrom: 2019, yearTo: 2024, currentCost: 88.90, currentListPrice: 182.50, category: "Electrical" },
+  { rootNumber: "ELC-4008", productDescription: "Ignition Switch", make: "Nissan", model: "Altima", yearFrom: 2019, yearTo: 2024, currentCost: 34.80, currentListPrice: 71.99, category: "Electrical" },
+  { rootNumber: "EXH-5001", productDescription: "Catalytic Converter - Direct Fit", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 245.80, currentListPrice: 499.99, category: "Exhaust" },
+  { rootNumber: "EXH-5002", productDescription: "Oxygen Sensor - Upstream", make: "Toyota", model: "Camry", yearFrom: 2018, yearTo: 2024, currentCost: 42.60, currentListPrice: 87.99, category: "Exhaust" },
+  { rootNumber: "EXH-5003", productDescription: "Catalytic Converter - Direct Fit", make: "Honda", model: "CR-V", yearFrom: 2017, yearTo: 2024, currentCost: 228.40, currentListPrice: 465.00, category: "Exhaust" },
+  { rootNumber: "EXH-5004", productDescription: "Muffler Assembly", make: "Chevrolet", model: "Equinox", yearFrom: 2018, yearTo: 2024, currentCost: 68.90, currentListPrice: 142.50, category: "Exhaust" },
+  { rootNumber: "EXH-5005", productDescription: "Oxygen Sensor - Downstream", make: "BMW", model: "X5", yearFrom: 2019, yearTo: 2024, currentCost: 55.80, currentListPrice: 114.99, category: "Exhaust" },
+  { rootNumber: "EXH-5006", productDescription: "Exhaust Manifold", make: "Ford", model: "Explorer", yearFrom: 2020, yearTo: 2024, currentCost: 142.30, currentListPrice: 292.50, category: "Exhaust" },
+  { rootNumber: "SUS-6001", productDescription: "Shock Absorber - Front", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 45.60, currentListPrice: 94.50, category: "Suspension" },
+  { rootNumber: "SUS-6002", productDescription: "Strut Assembly - Front", make: "Toyota", model: "Camry", yearFrom: 2018, yearTo: 2024, currentCost: 68.40, currentListPrice: 141.99, category: "Suspension" },
+  { rootNumber: "SUS-6003", productDescription: "Control Arm - Front Lower", make: "Honda", model: "Civic", yearFrom: 2016, yearTo: 2024, currentCost: 52.80, currentListPrice: 109.50, category: "Suspension" },
+  { rootNumber: "SUS-6004", productDescription: "Ball Joint - Front Lower", make: "Chevrolet", model: "Silverado", yearFrom: 2019, yearTo: 2024, currentCost: 28.40, currentListPrice: 58.99, category: "Suspension" },
+  { rootNumber: "SUS-6005", productDescription: "Tie Rod End - Outer", make: "Toyota", model: "RAV4", yearFrom: 2019, yearTo: 2024, currentCost: 18.90, currentListPrice: 39.50, category: "Suspension" },
+  { rootNumber: "SUS-6006", productDescription: "Wheel Bearing Assembly - Front", make: "Ford", model: "Explorer", yearFrom: 2020, yearTo: 2024, currentCost: 62.40, currentListPrice: 129.99, category: "Suspension" },
+  { rootNumber: "SUS-6007", productDescription: "Sway Bar Link", make: "BMW", model: "3 Series", yearFrom: 2019, yearTo: 2024, currentCost: 24.60, currentListPrice: 50.99, category: "Suspension" },
+  { rootNumber: "SUS-6008", productDescription: "Strut Assembly - Rear", make: "Hyundai", model: "Tucson", yearFrom: 2019, yearTo: 2024, currentCost: 58.20, currentListPrice: 119.99, category: "Suspension" },
+  { rootNumber: "DRV-7001", productDescription: "CV Axle Assembly - Front", make: "Honda", model: "CR-V", yearFrom: 2017, yearTo: 2024, currentCost: 72.80, currentListPrice: 149.99, category: "Drivetrain" },
+  { rootNumber: "DRV-7002", productDescription: "Wheel Hub Assembly - Front", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 58.40, currentListPrice: 119.99, category: "Drivetrain" },
+  { rootNumber: "DRV-7003", productDescription: "CV Axle Assembly - Front", make: "Toyota", model: "RAV4", yearFrom: 2019, yearTo: 2024, currentCost: 68.90, currentListPrice: 142.50, category: "Drivetrain" },
+  { rootNumber: "DRV-7004", productDescription: "Wheel Hub Assembly - Rear", make: "Chevrolet", model: "Equinox", yearFrom: 2018, yearTo: 2024, currentCost: 52.60, currentListPrice: 108.99, category: "Drivetrain" },
+  { rootNumber: "CLG-8001", productDescription: "Radiator", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 95.40, currentListPrice: 196.99, category: "Cooling" },
+  { rootNumber: "CLG-8002", productDescription: "Radiator", make: "Toyota", model: "Camry", yearFrom: 2018, yearTo: 2024, currentCost: 82.60, currentListPrice: 169.99, category: "Cooling" },
+  { rootNumber: "CLG-8003", productDescription: "Radiator Hose - Upper", make: "Honda", model: "Civic", yearFrom: 2016, yearTo: 2024, currentCost: 12.40, currentListPrice: 25.99, category: "Cooling" },
+  { rootNumber: "CLG-8004", productDescription: "Coolant Reservoir", make: "Chevrolet", model: "Silverado", yearFrom: 2019, yearTo: 2024, currentCost: 22.80, currentListPrice: 46.99, category: "Cooling" },
+  { rootNumber: "CLG-8005", productDescription: "Radiator Fan Assembly", make: "BMW", model: "X5", yearFrom: 2019, yearTo: 2024, currentCost: 145.80, currentListPrice: 299.99, category: "Cooling" },
+  { rootNumber: "CLG-8006", productDescription: "Heater Core", make: "Ford", model: "Explorer", yearFrom: 2020, yearTo: 2024, currentCost: 62.40, currentListPrice: 128.99, category: "Cooling" },
+  { rootNumber: "STR-9001", productDescription: "Power Steering Pump", make: "Ford", model: "F-150", yearFrom: 2018, yearTo: 2024, currentCost: 88.60, currentListPrice: 182.50, category: "Steering" },
+  { rootNumber: "STR-9002", productDescription: "Steering Rack", make: "Toyota", model: "Camry", yearFrom: 2018, yearTo: 2024, currentCost: 168.40, currentListPrice: 345.99, category: "Steering" },
+  { rootNumber: "STR-9003", productDescription: "Power Steering Hose", make: "Honda", model: "CR-V", yearFrom: 2017, yearTo: 2024, currentCost: 28.60, currentListPrice: 58.99, category: "Steering" },
+  { rootNumber: "STR-9004", productDescription: "Steering Column", make: "Nissan", model: "Altima", yearFrom: 2019, yearTo: 2024, currentCost: 142.80, currentListPrice: 294.50, category: "Steering" },
+];
+
 const statuses = ["Needs Review", "Complete", "Revised"];
+const regions = ["Northeast", "Southeast", "Midwest", "West", "Southwest", "Pacific NW"];
+const priorities = ["High", "Medium", "Low"];
+const engineReasons = ["Cost Decrease > 5%", "Margin Below Target", "Competitive Gap > 10%", "Cost Increase > 3%", "Volume Decline", "Stockout Risk", "New Competitive Data", "Margin Optimization"];
+const reasonCodes = ["Market Adjustment", "Competitive Match", "Margin Target", "Cost Pass-Through", "Volume Protection", ""];
+const costChangeCategories = ["COST DOWN", "COST UP", "COST SAME"];
+const inventoryStatuses = ["IN STOCK", "AT RISK", "OUT OF STOCK"];
+const popularities = ["A", "A", "A", "B", "B", "C"];
+const productTiers = ["TIER A", "TIER A", "TIER A", "TIER B", "TIER B", "TIER C"];
 const retentionBuckets = ["Platinum", "Gold", "Silver", "Bronze"];
 const renewalStatuses = ["Active", "Up for Renewal", "Renewed", "At Risk"];
 const commStatuses = ["Not Started", "Sent", "Discussed", "Accepted"];
-const reasons = ["Market Rate Adj", "Scope Expansion", "Inflation Adj", "Retention Risk", "Complexity Increase", "New Regulations", "Staff Reallocation", ""];
+
+// PS data kept intact for Professional Services instance
+const psPartners = ["D. McAllister", "C. Vasquez", "H. Brennan", "N. Okafor", "J. Lindström", "P. Ashworth", "M. Delacroix", "S. Reeves"];
+const psServiceLines = ["Strategy", "Technology", "Operations", "Human Capital", "Risk & Compliance", "Digital", "Change Management", "Data & Analytics"];
 const psReasons = ["Rate Card Realignment", "Scope Expansion", "Staffing Mix Change", "Retention Risk", "Deliverable Increase", "Resource Escalation", "Market Rate Adj", ""];
 
-interface Engagement {
+interface PsEngagement {
   clientName: string;
   projectName: string;
   serviceLine: string;
@@ -59,120 +178,12 @@ interface Engagement {
   currentAdminFee: number;
   scopeChangePct: number;
   recPriceIncreasePct: number;
-  qtyHrs?: number;
-  billRate?: number;
-  vcPerHr?: number;
+  qtyHrs: number;
+  billRate: number;
+  vcPerHr: number;
 }
 
-const engagements: Engagement[] = [
-  { clientName: "Meridian Health Systems", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "8 Years", currentFixedFee: 285000, currentAdminFee: 28500, scopeChangePct: 0, recPriceIncreasePct: 9 },
-  { clientName: "Meridian Health Systems", projectName: "Federal Tax Planning", serviceLine: "Tax", clientTenure: "8 Years", currentFixedFee: 95000, currentAdminFee: 9500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Meridian Health Systems", projectName: "Internal Audit Support", serviceLine: "Advisory", clientTenure: "8 Years", currentFixedFee: 120000, currentAdminFee: 12000, scopeChangePct: 5, recPriceIncreasePct: 10 },
-  { clientName: "Apex Capital Partners", projectName: "Fund Audit Q4", serviceLine: "Audit & Assurance", clientTenure: "5 Years", currentFixedFee: 175000, currentAdminFee: 17500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Apex Capital Partners", projectName: "Entity Tax Strategy", serviceLine: "Tax", clientTenure: "5 Years", currentFixedFee: 68000, currentAdminFee: 6800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Apex Capital Partners", projectName: "Transaction Advisory", serviceLine: "Advisory", clientTenure: "5 Years", currentFixedFee: 225000, currentAdminFee: 22500, scopeChangePct: 8, recPriceIncreasePct: 10 },
-  { clientName: "Greenfield Manufacturing", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "12 Years", currentFixedFee: 195000, currentAdminFee: 19500, scopeChangePct: 0, recPriceIncreasePct: 12 },
-  { clientName: "Greenfield Manufacturing", projectName: "Monthly Close Services", serviceLine: "Accounting", clientTenure: "12 Years", currentFixedFee: 84000, currentAdminFee: 8400, scopeChangePct: 0, recPriceIncreasePct: 9 },
-  { clientName: "Greenfield Manufacturing", projectName: "Tax Return Preparation", serviceLine: "Tax", clientTenure: "12 Years", currentFixedFee: 42000, currentAdminFee: 4200, scopeChangePct: 0, recPriceIncreasePct: 9 },
-  { clientName: "Harbor View Real Estate", projectName: "Quarterly Review", serviceLine: "Audit & Assurance", clientTenure: "3 Years", currentFixedFee: 65000, currentAdminFee: 6500, scopeChangePct: 0, recPriceIncreasePct: 9 },
-  { clientName: "Harbor View Real Estate", projectName: "Transaction Tax DD", serviceLine: "Tax", clientTenure: "3 Years", currentFixedFee: 110000, currentAdminFee: 11000, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Harbor View Real Estate", projectName: "Valuation Services", serviceLine: "Advisory", clientTenure: "3 Years", currentFixedFee: 85000, currentAdminFee: 8500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Summit Healthcare Group", projectName: "Compliance Audit", serviceLine: "Audit & Assurance", clientTenure: "6 Years", currentFixedFee: 320000, currentAdminFee: 32000, scopeChangePct: 3, recPriceIncreasePct: 10 },
-  { clientName: "Summit Healthcare Group", projectName: "Operational Transform", serviceLine: "Advisory", clientTenure: "6 Years", currentFixedFee: 450000, currentAdminFee: 45000, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Summit Healthcare Group", projectName: "Tax-Exempt Compliance", serviceLine: "Tax", clientTenure: "6 Years", currentFixedFee: 78000, currentAdminFee: 7800, scopeChangePct: 0, recPriceIncreasePct: 9 },
-  { clientName: "Blackstone River Capital", projectName: "SOC 1 Attestation", serviceLine: "Audit & Assurance", clientTenure: "4 Years", currentFixedFee: 92000, currentAdminFee: 9200, scopeChangePct: 0, recPriceIncreasePct: 9 },
-  { clientName: "Blackstone River Capital", projectName: "M&A Due Diligence", serviceLine: "Advisory", clientTenure: "4 Years", currentFixedFee: 340000, currentAdminFee: 34000, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Blackstone River Capital", projectName: "International Tax", serviceLine: "Tax", clientTenure: "4 Years", currentFixedFee: 125000, currentAdminFee: 12500, scopeChangePct: 0, recPriceIncreasePct: 13 },
-  { clientName: "Pinnacle Consumer Brands", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "7 Years", currentFixedFee: 165000, currentAdminFee: 16500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Pinnacle Consumer Brands", projectName: "Full Acctg Outsourcing", serviceLine: "Accounting", clientTenure: "7 Years", currentFixedFee: 156000, currentAdminFee: 15600, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Pinnacle Consumer Brands", projectName: "Federal Tax Planning", serviceLine: "Tax", clientTenure: "7 Years", currentFixedFee: 58000, currentAdminFee: 5800, scopeChangePct: 0, recPriceIncreasePct: 9 },
-  { clientName: "Liberty Mutual Properties", projectName: "Financial Stmt Audit", serviceLine: "Audit & Assurance", clientTenure: "10 Years", currentFixedFee: 240000, currentAdminFee: 24000, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Liberty Mutual Properties", projectName: "Risk Management", serviceLine: "Advisory", clientTenure: "10 Years", currentFixedFee: 135000, currentAdminFee: 13500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "NextGen Life Sciences", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "2 Years", currentFixedFee: 210000, currentAdminFee: 21000, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "NextGen Life Sciences", projectName: "R&D Tax Credits", serviceLine: "Tax", clientTenure: "2 Years", currentFixedFee: 72000, currentAdminFee: 7200, scopeChangePct: 0, recPriceIncreasePct: 11 },
-  { clientName: "NextGen Life Sciences", projectName: "Tech Implementation", serviceLine: "Advisory", clientTenure: "2 Years", currentFixedFee: 185000, currentAdminFee: 18500, scopeChangePct: 10, recPriceIncreasePct: 10 },
-  { clientName: "Atlantic Housing Trust", projectName: "Compliance Audit", serviceLine: "Audit & Assurance", clientTenure: "9 Years", currentFixedFee: 148000, currentAdminFee: 14800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Atlantic Housing Trust", projectName: "Grants Management", serviceLine: "Government", clientTenure: "9 Years", currentFixedFee: 95000, currentAdminFee: 9500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Cascade Food Group", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "5 Years", currentFixedFee: 138000, currentAdminFee: 13800, scopeChangePct: 0, recPriceIncreasePct: 11 },
-  { clientName: "Cascade Food Group", projectName: "State & Local Tax", serviceLine: "Tax", clientTenure: "5 Years", currentFixedFee: 46000, currentAdminFee: 4600, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Cascade Food Group", projectName: "AP/AR Management", serviceLine: "Accounting", clientTenure: "5 Years", currentFixedFee: 72000, currentAdminFee: 7200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Sterling Law Partners", projectName: "Financial Stmt Audit", serviceLine: "Audit & Assurance", clientTenure: "6 Years", currentFixedFee: 115000, currentAdminFee: 11500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Sterling Law Partners", projectName: "Partner Tax Planning", serviceLine: "Tax", clientTenure: "6 Years", currentFixedFee: 82000, currentAdminFee: 8200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Vanguard Senior Living", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "4 Years", currentFixedFee: 198000, currentAdminFee: 19800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Vanguard Senior Living", projectName: "Business Performance", serviceLine: "Advisory", clientTenure: "4 Years", currentFixedFee: 275000, currentAdminFee: 27500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Vanguard Senior Living", projectName: "Tax-Exempt Compliance", serviceLine: "Tax", clientTenure: "4 Years", currentFixedFee: 54000, currentAdminFee: 5400, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Ironclad Distributors", projectName: "SOC 2 Attestation", serviceLine: "Audit & Assurance", clientTenure: "3 Years", currentFixedFee: 78000, currentAdminFee: 7800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Ironclad Distributors", projectName: "System Implementation", serviceLine: "Accounting", clientTenure: "3 Years", currentFixedFee: 165000, currentAdminFee: 16500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Ironclad Distributors", projectName: "Tax Return Preparation", serviceLine: "Tax", clientTenure: "3 Years", currentFixedFee: 38000, currentAdminFee: 3800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Evergreen Community Fdn", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "11 Years", currentFixedFee: 88000, currentAdminFee: 8800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Evergreen Community Fdn", projectName: "Grant Compliance", serviceLine: "Government", clientTenure: "11 Years", currentFixedFee: 62000, currentAdminFee: 6200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Pacific Rim Ventures", projectName: "Transaction Advisory", serviceLine: "Advisory", clientTenure: "2 Years", currentFixedFee: 380000, currentAdminFee: 38000, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Pacific Rim Ventures", projectName: "International Tax", serviceLine: "Tax", clientTenure: "2 Years", currentFixedFee: 145000, currentAdminFee: 14500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Pacific Rim Ventures", projectName: "Fund Audit Q4", serviceLine: "Audit & Assurance", clientTenure: "2 Years", currentFixedFee: 195000, currentAdminFee: 19500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Cornerstone Medical", projectName: "Compliance Audit", serviceLine: "Audit & Assurance", clientTenure: "7 Years", currentFixedFee: 258000, currentAdminFee: 25800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Cornerstone Medical", projectName: "Financial Restructure", serviceLine: "Advisory", clientTenure: "7 Years", currentFixedFee: 310000, currentAdminFee: 31000, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Cornerstone Medical", projectName: "Entity Tax Strategy", serviceLine: "Tax", clientTenure: "7 Years", currentFixedFee: 74000, currentAdminFee: 7400, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Redwood Hospitality", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "5 Years", currentFixedFee: 142000, currentAdminFee: 14200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Redwood Hospitality", projectName: "Monthly Close Services", serviceLine: "Accounting", clientTenure: "5 Years", currentFixedFee: 96000, currentAdminFee: 9600, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Redwood Hospitality", projectName: "State & Local Tax", serviceLine: "Tax", clientTenure: "5 Years", currentFixedFee: 52000, currentAdminFee: 5200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Trident PE Group", projectName: "Fund Audit Q4", serviceLine: "Audit & Assurance", clientTenure: "6 Years", currentFixedFee: 185000, currentAdminFee: 18500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Trident PE Group", projectName: "M&A Due Diligence", serviceLine: "Advisory", clientTenure: "6 Years", currentFixedFee: 420000, currentAdminFee: 42000, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Trident PE Group", projectName: "Transaction Tax DD", serviceLine: "Tax", clientTenure: "6 Years", currentFixedFee: 135000, currentAdminFee: 13500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Beacon Hill Nonprofit", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "15 Years", currentFixedFee: 72000, currentAdminFee: 7200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Beacon Hill Nonprofit", projectName: "Government Audit", serviceLine: "Government", clientTenure: "15 Years", currentFixedFee: 85000, currentAdminFee: 8500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Beacon Hill Nonprofit", projectName: "Tax-Exempt Compliance", serviceLine: "Tax", clientTenure: "15 Years", currentFixedFee: 38000, currentAdminFee: 3800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Atlas Industrial Supply", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "4 Years", currentFixedFee: 155000, currentAdminFee: 15500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Atlas Industrial Supply", projectName: "GL Accounting", serviceLine: "Accounting", clientTenure: "4 Years", currentFixedFee: 108000, currentAdminFee: 10800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Atlas Industrial Supply", projectName: "Federal Tax Planning", serviceLine: "Tax", clientTenure: "4 Years", currentFixedFee: 62000, currentAdminFee: 6200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Horizon Pharma Holdings", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "3 Years", currentFixedFee: 278000, currentAdminFee: 27800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Horizon Pharma Holdings", projectName: "R&D Tax Credits", serviceLine: "Tax", clientTenure: "3 Years", currentFixedFee: 98000, currentAdminFee: 9800, scopeChangePct: 0, recPriceIncreasePct: 12 },
-  { clientName: "Horizon Pharma Holdings", projectName: "Valuation Services", serviceLine: "Advisory", clientTenure: "3 Years", currentFixedFee: 145000, currentAdminFee: 14500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Crestline Development", projectName: "Quarterly Review", serviceLine: "Audit & Assurance", clientTenure: "8 Years", currentFixedFee: 58000, currentAdminFee: 5800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Crestline Development", projectName: "Transaction Tax DD", serviceLine: "Tax", clientTenure: "8 Years", currentFixedFee: 92000, currentAdminFee: 9200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Crestline Development", projectName: "Tech Implementation", serviceLine: "Advisory", clientTenure: "8 Years", currentFixedFee: 210000, currentAdminFee: 21000, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Maple Grove Schools", projectName: "Compliance Audit", serviceLine: "Audit & Assurance", clientTenure: "6 Years", currentFixedFee: 105000, currentAdminFee: 10500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Maple Grove Schools", projectName: "Grants Management", serviceLine: "Government", clientTenure: "6 Years", currentFixedFee: 78000, currentAdminFee: 7800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Sentinel Wealth Mgmt", projectName: "SOC 1 Attestation", serviceLine: "Audit & Assurance", clientTenure: "5 Years", currentFixedFee: 88000, currentAdminFee: 8800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Sentinel Wealth Mgmt", projectName: "Entity Tax Strategy", serviceLine: "Tax", clientTenure: "5 Years", currentFixedFee: 76000, currentAdminFee: 7600, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Sentinel Wealth Mgmt", projectName: "Risk Management", serviceLine: "Advisory", clientTenure: "5 Years", currentFixedFee: 115000, currentAdminFee: 11500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "National Care Alliance", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "9 Years", currentFixedFee: 345000, currentAdminFee: 34500, scopeChangePct: 5, recPriceIncreasePct: 10 },
-  { clientName: "National Care Alliance", projectName: "Operational Transform", serviceLine: "Advisory", clientTenure: "9 Years", currentFixedFee: 520000, currentAdminFee: 52000, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "National Care Alliance", projectName: "Federal Tax Planning", serviceLine: "Tax", clientTenure: "9 Years", currentFixedFee: 112000, currentAdminFee: 11200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "CrossBridge Logistics", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "3 Years", currentFixedFee: 128000, currentAdminFee: 12800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "CrossBridge Logistics", projectName: "Process Automation", serviceLine: "Accounting", clientTenure: "3 Years", currentFixedFee: 145000, currentAdminFee: 14500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "CrossBridge Logistics", projectName: "State & Local Tax", serviceLine: "Tax", clientTenure: "3 Years", currentFixedFee: 48000, currentAdminFee: 4800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Oakmont Capital Grp", projectName: "Fund Audit Q4", serviceLine: "Audit & Assurance", clientTenure: "7 Years", currentFixedFee: 168000, currentAdminFee: 16800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Oakmont Capital Grp", projectName: "Transaction Advisory", serviceLine: "Advisory", clientTenure: "7 Years", currentFixedFee: 295000, currentAdminFee: 29500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Oakmont Capital Grp", projectName: "International Tax", serviceLine: "Tax", clientTenure: "7 Years", currentFixedFee: 118000, currentAdminFee: 11800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Brightpath Education", projectName: "Compliance Audit", serviceLine: "Audit & Assurance", clientTenure: "4 Years", currentFixedFee: 92000, currentAdminFee: 9200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Brightpath Education", projectName: "Grant Compliance", serviceLine: "Government", clientTenure: "4 Years", currentFixedFee: 68000, currentAdminFee: 6800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Ridgeline Construction", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "6 Years", currentFixedFee: 175000, currentAdminFee: 17500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Ridgeline Construction", projectName: "Tax Return Preparation", serviceLine: "Tax", clientTenure: "6 Years", currentFixedFee: 55000, currentAdminFee: 5500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Ridgeline Construction", projectName: "Consolidation Services", serviceLine: "Accounting", clientTenure: "6 Years", currentFixedFee: 88000, currentAdminFee: 8800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Coastal Ventures Fund", projectName: "Fund Audit Q4", serviceLine: "Audit & Assurance", clientTenure: "3 Years", currentFixedFee: 205000, currentAdminFee: 20500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Coastal Ventures Fund", projectName: "M&A Due Diligence", serviceLine: "Advisory", clientTenure: "3 Years", currentFixedFee: 365000, currentAdminFee: 36500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Midwest Grain Corp", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "10 Years", currentFixedFee: 158000, currentAdminFee: 15800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Midwest Grain Corp", projectName: "Federal Tax Planning", serviceLine: "Tax", clientTenure: "10 Years", currentFixedFee: 68000, currentAdminFee: 6800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Midwest Grain Corp", projectName: "Full Acctg Outsourcing", serviceLine: "Accounting", clientTenure: "10 Years", currentFixedFee: 132000, currentAdminFee: 13200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Paramount Hotel Group", projectName: "Financial Stmt Audit", serviceLine: "Audit & Assurance", clientTenure: "8 Years", currentFixedFee: 225000, currentAdminFee: 22500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Paramount Hotel Group", projectName: "Business Performance", serviceLine: "Advisory", clientTenure: "8 Years", currentFixedFee: 315000, currentAdminFee: 31500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Paramount Hotel Group", projectName: "State & Local Tax", serviceLine: "Tax", clientTenure: "8 Years", currentFixedFee: 72000, currentAdminFee: 7200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Heritage Family Office", projectName: "Estate & Trust Tax", serviceLine: "Tax", clientTenure: "14 Years", currentFixedFee: 145000, currentAdminFee: 14500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Heritage Family Office", projectName: "Wealth Strategy", serviceLine: "Advisory", clientTenure: "14 Years", currentFixedFee: 195000, currentAdminFee: 19500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "TechVault Solutions", projectName: "SOC 2 Attestation", serviceLine: "Audit & Assurance", clientTenure: "2 Years", currentFixedFee: 95000, currentAdminFee: 9500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "TechVault Solutions", projectName: "Tech Implementation", serviceLine: "Advisory", clientTenure: "2 Years", currentFixedFee: 248000, currentAdminFee: 24800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "TechVault Solutions", projectName: "R&D Tax Credits", serviceLine: "Tax", clientTenure: "2 Years", currentFixedFee: 82000, currentAdminFee: 8200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Sunbelt Medical Center", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "5 Years", currentFixedFee: 298000, currentAdminFee: 29800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Sunbelt Medical Center", projectName: "Internal Audit Support", serviceLine: "Advisory", clientTenure: "5 Years", currentFixedFee: 142000, currentAdminFee: 14200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Keystone Industries", projectName: "Annual Audit FY26", serviceLine: "Audit & Assurance", clientTenure: "11 Years", currentFixedFee: 182000, currentAdminFee: 18200, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Keystone Industries", projectName: "Entity Tax Strategy", serviceLine: "Tax", clientTenure: "11 Years", currentFixedFee: 78000, currentAdminFee: 7800, scopeChangePct: 0, recPriceIncreasePct: 10 },
-  { clientName: "Keystone Industries", projectName: "AP/AR Management", serviceLine: "Accounting", clientTenure: "11 Years", currentFixedFee: 65000, currentAdminFee: 6500, scopeChangePct: 0, recPriceIncreasePct: 10 },
-];
-
-const psPartners = ["D. McAllister", "C. Vasquez", "H. Brennan", "N. Okafor", "J. Lindström", "P. Ashworth", "M. Delacroix", "S. Reeves"];
-const psServiceLines = ["Strategy", "Technology", "Operations", "Human Capital", "Risk & Compliance", "Digital", "Change Management", "Data & Analytics"];
-
-const psEngagements: Engagement[] = [
+const psEngagements: PsEngagement[] = [
   { clientName: "Meridian Health Systems", projectName: "Digital Transformation Roadmap", serviceLine: "Technology", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 8, qtyHrs: 1200, billRate: 295, vcPerHr: 168 },
   { clientName: "Meridian Health Systems", projectName: "EHR Migration — Phase 2", serviceLine: "Technology", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 10, qtyHrs: 2400, billRate: 310, vcPerHr: 175 },
   { clientName: "Meridian Health Systems", projectName: "Workforce Planning", serviceLine: "Human Capital", clientTenure: "5 Years", currentFixedFee: 0, currentAdminFee: 0, scopeChangePct: 0, recPriceIncreasePct: 6, qtyHrs: 640, billRate: 265, vcPerHr: 155 },
@@ -232,12 +243,120 @@ function seededRandom(seed: number) {
   return x - Math.floor(x);
 }
 
-export function generateTableData(instanceId?: number): RowData[] {
-  const isPS = instanceId === 415;
-  const sourceEngagements = isPS ? psEngagements : engagements;
-  const sourcePartners = isPS ? psPartners : partners;
-  const sourceReasons = isPS ? psReasons : reasons;
-  return sourceEngagements.map((eng, i) => {
+function generateProductData(): RowData[] {
+  return products.map((prod, i) => {
+    const seed = i + 42;
+    const r1 = seededRandom(seed);
+    const r2 = seededRandom(seed + 100);
+    const r3 = seededRandom(seed + 200);
+    const r4 = seededRandom(seed + 300);
+    const r5 = seededRandom(seed + 400);
+    const r6 = seededRandom(seed + 500);
+    const r7 = seededRandom(seed + 600);
+    const r8 = seededRandom(seed + 700);
+    const r9 = seededRandom(seed + 800);
+    const r10 = seededRandom(seed + 900);
+
+    const statusIdx = r2 < 0.55 ? 0 : r2 < 0.85 ? 1 : 2;
+    const status = statuses[statusIdx];
+    const region = regions[Math.floor(r4 * regions.length)];
+    const popularity = popularities[Math.floor(r5 * popularities.length)];
+    const productTier = productTiers[Math.floor(r5 * productTiers.length)];
+    const costChangeCategory = costChangeCategories[Math.floor(r6 * costChangeCategories.length)];
+    const inventoryStatus = inventoryStatuses[Math.floor(r7 * inventoryStatuses.length)];
+    const priceFreezeFlag = r8 < 0.15;
+    const mostRecentScrapeFlag = r9 < 0.8;
+    const expectedStockoutDays = Math.round((r10 - 0.4) * 80);
+
+    const costChangeFactor = costChangeCategory === "COST DOWN" ? (1 - r3 * 0.08) : costChangeCategory === "COST UP" ? (1 + r3 * 0.06) : 1;
+    const adjustedCost = Math.round(prod.currentCost * costChangeFactor * 100) / 100;
+
+    const recPctChange = Math.round((r1 * 8 + 2) * 10) / 10;
+    const recPrice = Math.round(prod.currentListPrice * (1 + recPctChange / 100) * 100) / 100;
+    const revisedAdjust = r3 < 0.3 ? -0.015 : r3 < 0.6 ? 0 : 0.01;
+    const revisedPrice = Math.round(recPrice * (1 + revisedAdjust) * 100) / 100;
+    const revisedPricePctFromCurrent = Math.round(((revisedPrice - prod.currentListPrice) / prod.currentListPrice) * 1000) / 10;
+    const grossProfit = Math.round((prod.currentListPrice - adjustedCost) * 100) / 100;
+    const recMargin35 = Math.round((recPrice * 0.65 - adjustedCost) * 100) / 100;
+
+    const ttmQty = Math.round(50 + r8 * 4950);
+    const ttmRevenue = Math.round(prod.currentListPrice * ttmQty * 100) / 100;
+    const ttmMarginDollar = Math.round(grossProfit * ttmQty * 100) / 100;
+    const ttmMarginPct = Math.round(((prod.currentListPrice - adjustedCost) / prod.currentListPrice) * 1000) / 10;
+
+    const competitivePrice = r7 < 0.7 ? Math.round(prod.currentListPrice * (0.9 + r9 * 0.2) * 100) / 100 : null;
+    const baseCompPrice = mostRecentScrapeFlag ? (competitivePrice || Math.round(prod.currentListPrice * (0.92 + r10 * 0.16) * 100) / 100) : null;
+
+    const revisedImpact = Math.round((revisedPrice - prod.currentListPrice) * 100) / 100;
+    const impactDelta = Math.round((revisedPrice - recPrice) * 100) / 100;
+
+    return {
+      hasComments: r3 < 0.25,
+      status,
+      approvalStatus: statusIdx === 0 ? "Needs Review" : statusIdx === 1 ? "Approved" : "Pending",
+      reviewPriority: priorities[Math.floor(r4 * priorities.length)],
+      engineOutputReason: engineReasons[Math.floor(r6 * engineReasons.length)],
+      rootNumber: prod.rootNumber,
+      region,
+      productDescription: prod.productDescription,
+      currentListPrice: prod.currentListPrice,
+      recPctChangeFromCurPrice: recPctChange,
+      recPrice,
+      revisedPrice,
+      revisedPriceReasonCode: reasonCodes[Math.floor(r7 * reasonCodes.length)],
+      grossProfit,
+      recMargin35,
+      revisedPricePctFromCurrent,
+      currentCost: adjustedCost,
+      ttmRevenue,
+      ttmQty,
+      ttmMarginDollar,
+      ttmMarginPct,
+      make: prod.make,
+      model: prod.model,
+      yearFrom: prod.yearFrom,
+      yearTo: prod.yearTo,
+      competitivePrice,
+      popularity,
+      productTier,
+      priceFreezeFlag,
+      costChangeCategory,
+      inventoryStatus,
+      expectedStockoutDays,
+      baseCompPrice,
+      mostRecentScrapeFlag,
+      // Legacy field mappings for AnalyticsDrawer / PS compatibility
+      partnerName: region,
+      clientName: prod.make,
+      projectName: prod.productDescription,
+      serviceLine: prod.category,
+      clientTenure: `${prod.yearTo - prod.yearFrom + 1} Years`,
+      retentionBucket: retentionBuckets[Math.floor(r5 * retentionBuckets.length)],
+      clientRenewalStatus: renewalStatuses[Math.floor(r2 * renewalStatuses.length)],
+      currentFixedFee: prod.currentListPrice,
+      scopeChangePct: 0,
+      fixedFeeAfterScope: prod.currentListPrice,
+      recPriceIncreasePct: recPctChange,
+      recFixedFee: recPrice,
+      revisedFixedFee: revisedPrice,
+      revisedPriceIncreasePct: revisedPricePctFromCurrent,
+      currentAdminFee: 0,
+      revisedAdminFee: 0,
+      revisedTotalFee: revisedPrice,
+      revisedImpact,
+      impactDelta,
+      revisionReason: reasonCodes[Math.floor(r7 * reasonCodes.length)],
+      clientCommStatus: commStatuses[Math.floor(r10 * commStatuses.length)],
+      custAcceptedFixedFee: null,
+      custAcceptedAdminFee: null,
+      finalTotalFee: null,
+      finalTotalPct: null,
+    };
+  });
+}
+
+function generatePsData(): RowData[] {
+  return psEngagements.map((eng, i) => {
     const seed = i + 42;
     const r1 = seededRandom(seed);
     const r2 = seededRandom(seed + 100);
@@ -251,110 +370,103 @@ export function generateTableData(instanceId?: number): RowData[] {
     const isFinalized = statusIdx >= 1;
     const commIdx = isFinalized ? (r6 < 0.4 ? 3 : r6 < 0.7 ? 2 : 1) : (r6 < 0.5 ? 0 : 1);
 
-    const base = {
+    const qtyHrs = eng.qtyHrs;
+    const estDays = Math.round(qtyHrs / 8);
+    const billRate = eng.billRate;
+    const extFees = qtyHrs * billRate;
+    const vcPerHr = eng.vcPerHr;
+    const marginPct = Math.round(((billRate - vcPerHr) / billRate) * 1000) / 10;
+
+    const recBillRate = Math.round(billRate * (1 + eng.recPriceIncreasePct / 100));
+    const recExtFees = qtyHrs * recBillRate;
+    const recMarginPct = Math.round(((recBillRate - vcPerHr) / recBillRate) * 1000) / 10;
+
+    const revisedAdjust = r1 < 0.3 ? -0.02 : r1 < 0.6 ? 0 : 0.01;
+    const revisedBillRate = Math.round(recBillRate * (1 + revisedAdjust));
+    const revisedExtFees = qtyHrs * revisedBillRate;
+    const revisedVcPerHr = vcPerHr;
+    const revisedMarginPct = Math.round(((revisedBillRate - revisedVcPerHr) / revisedBillRate) * 1000) / 10;
+
+    const revisedImpact = revisedExtFees - extFees;
+    const impactDelta = revisedExtFees - recExtFees;
+
+    return {
       hasComments: r3 < 0.3,
       status: statuses[statusIdx],
-      partnerName: sourcePartners[Math.floor(r4 * sourcePartners.length)],
+      approvalStatus: "",
+      reviewPriority: "",
+      engineOutputReason: "",
+      rootNumber: "",
+      region: "",
+      productDescription: eng.projectName,
+      currentListPrice: 0,
+      recPctChangeFromCurPrice: 0,
+      recPrice: 0,
+      revisedPrice: 0,
+      revisedPriceReasonCode: "",
+      grossProfit: 0,
+      recMargin35: 0,
+      revisedPricePctFromCurrent: 0,
+      currentCost: 0,
+      ttmRevenue: 0,
+      ttmQty: 0,
+      ttmMarginDollar: 0,
+      ttmMarginPct: 0,
+      make: "",
+      model: "",
+      yearFrom: 0,
+      yearTo: 0,
+      competitivePrice: null,
+      popularity: "",
+      productTier: "",
+      priceFreezeFlag: false,
+      costChangeCategory: "",
+      inventoryStatus: "",
+      expectedStockoutDays: 0,
+      baseCompPrice: null,
+      mostRecentScrapeFlag: false,
+      partnerName: psPartners[Math.floor(r4 * psPartners.length)],
       clientName: eng.clientName,
       projectName: eng.projectName,
       serviceLine: eng.serviceLine,
       clientTenure: eng.clientTenure,
       retentionBucket: retentionBuckets[Math.floor(r5 * retentionBuckets.length)],
       clientRenewalStatus: renewalStatuses[Math.floor(r2 * renewalStatuses.length)],
-      revisionReason: sourceReasons[Math.floor(r3 * sourceReasons.length)],
-      clientCommStatus: commStatuses[commIdx],
-    };
-
-    if (isPS && eng.qtyHrs && eng.billRate && eng.vcPerHr) {
-      const qtyHrs = eng.qtyHrs;
-      const estDays = Math.round(qtyHrs / 8);
-      const billRate = eng.billRate;
-      const extFees = qtyHrs * billRate;
-      const vcPerHr = eng.vcPerHr;
-      const marginPct = Math.round(((billRate - vcPerHr) / billRate) * 1000) / 10;
-
-      const recBillRate = Math.round(billRate * (1 + eng.recPriceIncreasePct / 100));
-      const recExtFees = qtyHrs * recBillRate;
-      const recMarginPct = Math.round(((recBillRate - vcPerHr) / recBillRate) * 1000) / 10;
-
-      const revisedAdjust = r1 < 0.3 ? -0.02 : r1 < 0.6 ? 0 : 0.01;
-      const revisedBillRate = Math.round(recBillRate * (1 + revisedAdjust));
-      const revisedExtFees = qtyHrs * revisedBillRate;
-      const revisedVcPerHr = vcPerHr;
-      const revisedMarginPct = Math.round(((revisedBillRate - revisedVcPerHr) / revisedBillRate) * 1000) / 10;
-
-      const revisedImpact = revisedExtFees - extFees;
-      const impactDelta = revisedExtFees - recExtFees;
-
-      return {
-        ...base,
-        currentFixedFee: extFees,
-        scopeChangePct: 0,
-        fixedFeeAfterScope: extFees,
-        recPriceIncreasePct: eng.recPriceIncreasePct,
-        recFixedFee: recExtFees,
-        revisedFixedFee: revisedExtFees,
-        revisedPriceIncreasePct: Math.round(((revisedBillRate - billRate) / billRate) * 1000) / 10,
-        currentAdminFee: 0,
-        revisedAdminFee: 0,
-        revisedTotalFee: revisedExtFees,
-        revisedImpact,
-        impactDelta,
-        custAcceptedFixedFee: isFinalized ? (r7 < 0.7 ? revisedExtFees : Math.round(revisedExtFees * 0.98)) : null,
-        custAcceptedAdminFee: null,
-        finalTotalFee: isFinalized ? (r7 < 0.7 ? revisedExtFees : Math.round(revisedExtFees * 0.98)) : null,
-        finalTotalPct: isFinalized ? Math.round(((r7 < 0.7 ? revisedExtFees : Math.round(revisedExtFees * 0.98)) - extFees) / extFees * 1000) / 10 : null,
-        qtyHrs,
-        estDays,
-        billRate,
-        extFees,
-        vcPerHr,
-        marginPct,
-        recBillRate,
-        recExtFees,
-        recMarginPct,
-        revisedBillRate,
-        revisedExtFees,
-        revisedMarginPct,
-        revisedVcPerHr,
-      };
-    }
-
-    const fixedFeeAfterScope = Math.round(eng.currentFixedFee * (1 + eng.scopeChangePct / 100));
-    const recFixedFee = Math.round(fixedFeeAfterScope * (1 + eng.recPriceIncreasePct / 100));
-    const revisedAdjust = r1 < 0.3 ? -0.02 : r1 < 0.6 ? 0 : 0.01;
-    const revisedFixedFee = Math.round(recFixedFee * (1 + revisedAdjust));
-    const revisedPriceIncreasePct = Math.round(((revisedFixedFee - eng.currentFixedFee) / eng.currentFixedFee) * 1000) / 10;
-    const revisedAdminFee = Math.round(eng.currentAdminFee * (1 + revisedPriceIncreasePct / 100));
-    const revisedTotalFee = revisedFixedFee + revisedAdminFee;
-    const currentTotal = eng.currentFixedFee + eng.currentAdminFee;
-    const revisedImpact = revisedTotalFee - currentTotal;
-    const recTotal = recFixedFee + Math.round(eng.currentAdminFee * (1 + eng.recPriceIncreasePct / 100));
-    const impactDelta = revisedTotalFee - recTotal;
-
-    const custAcceptedFixedFee = isFinalized ? (r7 < 0.7 ? revisedFixedFee : Math.round(revisedFixedFee * 0.98)) : null;
-    const custAcceptedAdminFee = isFinalized ? (r7 < 0.7 ? revisedAdminFee : Math.round(revisedAdminFee * 0.98)) : null;
-    const finalTotalFee = custAcceptedFixedFee !== null && custAcceptedAdminFee !== null ? custAcceptedFixedFee + custAcceptedAdminFee : null;
-    const finalTotalPct = finalTotalFee !== null ? Math.round(((finalTotalFee - currentTotal) / currentTotal) * 1000) / 10 : null;
-
-    return {
-      ...base,
-      currentFixedFee: eng.currentFixedFee,
-      scopeChangePct: eng.scopeChangePct,
-      fixedFeeAfterScope,
+      currentFixedFee: extFees,
+      scopeChangePct: 0,
+      fixedFeeAfterScope: extFees,
       recPriceIncreasePct: eng.recPriceIncreasePct,
-      recFixedFee,
-      revisedFixedFee,
-      revisedPriceIncreasePct,
-      currentAdminFee: eng.currentAdminFee,
-      revisedAdminFee,
-      revisedTotalFee,
+      recFixedFee: recExtFees,
+      revisedFixedFee: revisedExtFees,
+      revisedPriceIncreasePct: Math.round(((revisedBillRate - billRate) / billRate) * 1000) / 10,
+      currentAdminFee: 0,
+      revisedAdminFee: 0,
+      revisedTotalFee: revisedExtFees,
       revisedImpact,
       impactDelta,
-      custAcceptedFixedFee,
-      custAcceptedAdminFee,
-      finalTotalFee,
-      finalTotalPct,
+      revisionReason: psReasons[Math.floor(r3 * psReasons.length)],
+      clientCommStatus: commStatuses[commIdx],
+      custAcceptedFixedFee: isFinalized ? (r7 < 0.7 ? revisedExtFees : Math.round(revisedExtFees * 0.98)) : null,
+      custAcceptedAdminFee: null,
+      finalTotalFee: isFinalized ? (r7 < 0.7 ? revisedExtFees : Math.round(revisedExtFees * 0.98)) : null,
+      finalTotalPct: isFinalized ? Math.round(((r7 < 0.7 ? revisedExtFees : Math.round(revisedExtFees * 0.98)) - extFees) / extFees * 1000) / 10 : null,
+      qtyHrs,
+      estDays,
+      billRate,
+      extFees,
+      vcPerHr,
+      marginPct,
+      recBillRate,
+      recExtFees,
+      recMarginPct,
+      revisedBillRate,
+      revisedExtFees,
+      revisedMarginPct,
+      revisedVcPerHr,
     };
   });
+}
+
+export function generateTableData(instanceId?: number): RowData[] {
+  return instanceId === 415 ? generatePsData() : generateProductData();
 }

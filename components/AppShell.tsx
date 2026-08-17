@@ -44,8 +44,8 @@ const INSTANCES = [
 ];
 
 const NAV_ITEMS = [
-  { label: "Price Review", path: "/" },
-  { label: "Pre-Call Dashboard", path: "/pre-call-plan" },
+  { label: "Summary Dashboard", path: "/" },
+  { label: "Price Review", path: "/price-review" },
 ];
 
 function Logo({ size = 20 }: { size?: number }) {
@@ -79,7 +79,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isTempoActive = pathname === "/" || pathname.startsWith("/tempo") || pathname.startsWith("/pre-call");
+  const isTempoActive = pathname === "/" || pathname.startsWith("/tempo") || pathname.startsWith("/price-review");
 
   useEffect(() => {
     const handler = () => setInstanceModalOpen(true);
@@ -231,6 +231,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       />
                     </ListItemButton>
                   ))}
+
+                  <ListItemButton
+                    onClick={() => { openWalkthrough(); setSidebarOpen(false); }}
+                    sx={{
+                      py: 1.25,
+                      pl: 7,
+                      "&:hover": { bgcolor: "rgba(0,0,0,0.04)" },
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <SlideshowIcon sx={{ color: "#D97C14", fontSize: 18 }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Tempo Walkthrough"
+                      slotProps={{ primary: { sx: { fontSize: 14, color: "#555" } } }}
+                    />
+                  </ListItemButton>
                 </List>
               </Collapse>
             </List>
@@ -265,19 +282,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 slotProps={{ primary: { sx: { fontSize: 14, color: "#555" } } }}
               />
               <ChevronRightIcon sx={{ color: "rgba(0,0,0,0.3)", fontSize: 18 }} />
-            </ListItemButton>
-
-            <ListItemButton
-              onClick={() => { openWalkthrough(); setSidebarOpen(false); }}
-              sx={{ py: 1, px: 2.5, opacity: 0.4, "&:hover": { opacity: 0.7 } }}
-            >
-              <ListItemIcon sx={{ minWidth: 36 }}>
-                <SlideshowIcon sx={{ color: "rgba(0,0,0,0.3)", fontSize: 20 }} />
-              </ListItemIcon>
-              <ListItemText
-                primary="Model Walkthrough"
-                slotProps={{ primary: { sx: { fontSize: 12, color: "rgba(0,0,0,0.4)" } } }}
-              />
             </ListItemButton>
 
             <ListItemButton

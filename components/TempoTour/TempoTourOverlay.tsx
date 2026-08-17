@@ -30,7 +30,7 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    page: "/",
+    page: "/price-review",
     target: "tempo-full-page",
     icon: "🏠",
     color: "#00446a",
@@ -41,7 +41,7 @@ const STEPS: Step[] = [
       "Tempo is industry-agnostic. The same platform powers pricing reviews for professional services, manufacturing, distribution, SaaS, and more. What changes is the data — Tempo molds to it.",
   },
   {
-    page: "/",
+    page: "/price-review",
     target: "data-table",
     icon: "📋",
     color: "#0F6E56",
@@ -52,7 +52,7 @@ const STEPS: Step[] = [
       "In this instance the review unit is an engagement: Client + Project + Service Line. In another instance it might be Customer + Product + Region, or SKU + Plant + Channel. Tempo adapts to your business, not the other way around.",
   },
   {
-    page: "/",
+    page: "/price-review",
     target: "revised-columns",
     action: "scroll-to-revised",
     icon: "✏️",
@@ -64,7 +64,7 @@ const STEPS: Step[] = [
       "The model gives every engagement a starting point. Reviewers can accept as-is, revise based on their judgment, or override entirely. Once finalized, they mark it complete — or, if an approval workflow is configured, submit through the defined approval chain.",
   },
   {
-    page: "/",
+    page: "/price-review",
     target: undefined,
     action: "open-mass-action",
     icon: "⚡",
@@ -76,7 +76,7 @@ const STEPS: Step[] = [
       "Without this, pricing teams spend days copying values row by row or managing fragile spreadsheet macros. Mass Actions eliminate that manual work while keeping guardrails in place — validation errors surface before anything is committed, and approval workflows still apply.",
   },
   {
-    page: "/",
+    page: "/price-review",
     target: "data-layout-panel",
     action: "open-data-layout",
     icon: "🗂️",
@@ -88,7 +88,7 @@ const STEPS: Step[] = [
       "Permissions are configurable per user and per hierarchy level. A partner sees their clients; a practice leader sees the full service line; firm leadership sees the entire book. Filter to any level and the KPIs, table, and recommendations all update instantly.",
   },
   {
-    page: "/",
+    page: "/price-review",
     target: "kpi-cards",
     icon: "📊",
     color: "#D97C14",
@@ -99,7 +99,7 @@ const STEPS: Step[] = [
       "KPIs are configured per instance. This demo shows pricing-focused metrics, but Tempo can surface margin, volume, utilization, or any metric that matters to your review process.",
   },
   {
-    page: "/",
+    page: "/price-review",
     target: "drawer",
     action: "open-drawer-engagement-details",
     icon: "📈",
@@ -111,7 +111,7 @@ const STEPS: Step[] = [
       "Every engagement opens a support panel with historical pricing data, fee breakdowns, and recommendation trends. The data is right there when you need to make a decision — before any AI enters the picture.",
   },
   {
-    page: "/",
+    page: "/price-review",
     target: "drawer",
     action: "open-drawer-explain-price",
     icon: "🤖",
@@ -123,24 +123,12 @@ const STEPS: Step[] = [
       "\"Explain the Price\" generates a plain-language breakdown of pricing drivers. \"AI Analytics\" lets you ask questions and explore scenarios in natural language. These AI features augment the data views — they don't replace them.",
   },
   {
-    page: "/pre-call-plan",
-    target: "radar-posture",
-    action: "auto-generate",
-    icon: "🎯",
-    color: "#D97C14",
-    title: "From Insight to Conversation",
-    caption:
-      "When it's time to talk pricing, Tempo generates a complete playbook — talking points, objection handling, value anchors, and buying patterns — all tailored to the account and posture.",
-    detail:
-      "Drivers on the left set the negotiation posture. The model translates those into a named strategy with a specific % increase. Every piece of generated content adapts when a driver changes.",
-  },
-  {
-    page: "/pre-call-plan",
+    page: "/price-review",
     icon: "⚡",
     color: "#00446a",
     title: "Weeks, Not Months",
     caption:
-      "Everything you just saw — the review table, KPIs, data layouts, AI explanations, pre-call planning — is configured for your business in weeks. No data templates required. Tempo connects to your existing data and molds around it.",
+      "Everything you just saw — the review table, KPIs, data layouts, and AI explanations — is configured for your business in weeks. No data templates required. Tempo connects to your existing data and molds around it.",
     detail:
       "Most implementations are live within 4–6 weeks. Your data stays in your systems — Tempo connects via API. Configurable permissions mean you can roll out to one team first and expand from there.",
   },
@@ -163,13 +151,11 @@ export default function TempoTourOverlay() {
   const decisionSupportSubs = [
     {
       caption: "Every review unit carries its own profile — engagement details, key contacts, historical context, and scope attributes. Everything a reviewer needs to understand the relationship before making a pricing decision.",
-      detail: "This view is configurable per instance. Fields, labels, and sections adapt to your data — whether that's client tenure, contract terms, service complexity, or custom attributes unique to your business.",
       subLabel: "Engagement Details",
     },
-    { caption: step?.caption, detail: step?.detail, subLabel: "Price History" },
+    { caption: step?.caption, subLabel: "Price History" },
   ];
   const activeCaption = isDecisionSupport ? decisionSupportSubs[subStep]?.caption : step?.caption;
-  const activeDetail = isDecisionSupport ? decisionSupportSubs[subStep]?.detail : step?.detail;
 
   const measureTarget = useCallback(() => {
     if (!step?.target) {
@@ -445,18 +431,6 @@ export default function TempoTourOverlay() {
           )}
           <Typography sx={{ fontSize: 14, color: "rgba(0,0,0,0.6)", lineHeight: 1.7 }}>
             {activeCaption}
-          </Typography>
-          <Typography
-            sx={{
-              fontSize: 12,
-              color: "rgba(0,0,0,0.4)",
-              lineHeight: 1.7,
-              mt: 1.5,
-              pl: 1.5,
-              borderLeft: "2px solid rgba(0,0,0,0.08)",
-            }}
-          >
-            {activeDetail}
           </Typography>
         </Box>
 
