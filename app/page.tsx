@@ -248,13 +248,13 @@ export default function SummaryDashboardPage() {
                   <BarChart data={marginByTier} barSize={18} barGap={2}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
                     <XAxis dataKey="name" fontSize={10} tick={{ fill: "rgba(0,0,0,0.6)" }} tickLine={false} axisLine={{ stroke: "rgba(0,0,0,0.08)" }} />
-                    <YAxis fontSize={10} tick={{ fill: "rgba(0,0,0,0.4)" }} tickFormatter={(v: number) => `${v}%`} domain={[0, 50]} tickLine={false} axisLine={false} />
-                    <RechartsTooltip contentStyle={{ fontSize: 11, borderRadius: 6, border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }} formatter={(value: number) => `${value}%`} />
+                    <YAxis fontSize={10} tick={{ fill: "rgba(0,0,0,0.4)" }} tickFormatter={(v) => `${v}%`} domain={[0, 50]} tickLine={false} axisLine={false} />
+                    <RechartsTooltip contentStyle={{ fontSize: 11, borderRadius: 6, border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }} formatter={(value) => `${value}%`} />
                     <Bar dataKey="peer" fill="#d0d0d0" radius={[3, 3, 0, 0]}>
-                      <LabelList dataKey="peer" position="top" style={{ fontSize: 9, fill: "rgba(0,0,0,0.4)", fontWeight: 500 }} formatter={(v: number) => `${v}%`} />
+                      <LabelList dataKey="peer" position="top" style={{ fontSize: 9, fill: "rgba(0,0,0,0.4)", fontWeight: 500 }} formatter={(v) => `${v}%`} />
                     </Bar>
                     <Bar dataKey="current" fill="#00446a" radius={[3, 3, 0, 0]}>
-                      <LabelList dataKey="current" position="top" style={{ fontSize: 9, fill: "#00446a", fontWeight: 600 }} formatter={(v: number) => `${v}%`} />
+                      <LabelList dataKey="current" position="top" style={{ fontSize: 9, fill: "#00446a", fontWeight: 600 }} formatter={(v) => `${v}%`} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -323,8 +323,8 @@ export default function SummaryDashboardPage() {
                       <LineChart data={feeIncreaseTrend}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
                         <XAxis dataKey="cycle" fontSize={10} tick={{ fill: "rgba(0,0,0,0.5)" }} tickLine={false} axisLine={{ stroke: "rgba(0,0,0,0.08)" }} />
-                        <YAxis fontSize={10} tick={{ fill: "rgba(0,0,0,0.4)" }} tickFormatter={(v: number) => `${v}%`} domain={[0, 5]} tickLine={false} axisLine={false} />
-                        <RechartsTooltip contentStyle={{ fontSize: 11, borderRadius: 6, border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }} formatter={(value: number) => `${value}%`} />
+                        <YAxis fontSize={10} tick={{ fill: "rgba(0,0,0,0.4)" }} tickFormatter={(v) => `${v}%`} domain={[0, 5]} tickLine={false} axisLine={false} />
+                        <RechartsTooltip contentStyle={{ fontSize: 11, borderRadius: 6, border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }} formatter={(value) => `${value}%`} />
                         <Line type="monotone" dataKey="recommended" stroke="#00446a" strokeWidth={2.5} dot={{ r: 4, fill: "#00446a", strokeWidth: 0 }} name="Recommended %" />
                         <Line type="monotone" dataKey="revised" stroke="#f08b1d" strokeWidth={2.5} dot={{ r: 4, fill: "#f08b1d", strokeWidth: 0 }} name="Revised %" />
                         <Line type="monotone" dataKey="accepted" stroke="#2e7d32" strokeWidth={2.5} dot={{ r: 4, fill: "#2e7d32", strokeWidth: 0 }} name="Accepted %" />
