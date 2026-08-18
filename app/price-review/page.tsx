@@ -31,6 +31,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -224,7 +226,7 @@ const columns: Column[] = [
     render: (row) => {
       const c = approvalColors[row.approvalStatus] || { bg: "#f5f5f5", color: "#333" };
       return (
-        <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, px: 1, py: 0.25, borderRadius: "4px", bgcolor: c.bg }}>
+        <Box sx={{ display: "inline-flex", alignItems: "center", justifyContent: "space-between", gap: 0.5, px: 1, py: 0.25, borderRadius: "4px", bgcolor: c.bg, minWidth: 110 }}>
           <Typography sx={{ fontSize: 11, fontWeight: 500, color: c.color, whiteSpace: "nowrap" }}>{row.approvalStatus}</Typography>
           <ExpandMoreIcon sx={{ fontSize: 14, color: c.color }} />
         </Box>
@@ -234,6 +236,7 @@ const columns: Column[] = [
   { key: "reviewPriority", label: "Review\nPriority", width: 90, align: "center" },
   { key: "engineOutputReason", label: "Engine Output\nReason", width: 150 },
   { key: "rootNumber", label: "Root #", width: 100 },
+  { key: "make", label: "Make", width: 100 },
   { key: "region", label: "Region", width: 110 },
   { key: "productDescription", label: "Product Description", width: 200 },
   { key: "currentListPrice", label: "Current List\nPrice", width: 110, align: "right", render: (row) => fmt(row.currentListPrice) },
@@ -289,7 +292,7 @@ const columns: Column[] = [
       return <Typography sx={{ fontSize: 12, fontWeight: 600, color }}>{pct(row.ttmMarginPct)}</Typography>;
     },
   },
-  { key: "make", label: "Make", width: 100 },
+  { key: "make2", label: "Make", width: 100, render: (row) => row.make },
   { key: "model", label: "Model", width: 100 },
   { key: "yearFrom", label: "Year From", width: 80, align: "center" },
   { key: "yearTo", label: "Year To", width: 80, align: "center" },
@@ -1045,6 +1048,7 @@ export default function PriceReviewPage() {
   const [statusOverlay, setStatusOverlay] = useState<{ left: number; width: number } | null>(null);
   const [analyticsPreload, setAnalyticsPreload] = useState<string | undefined>();
   const [activeTourStep, setActiveTourStep] = useState<number | null>(null);
+  const [kpiHighlight, setKpiHighlight] = useState(false);
   const [statusFilterAnchor, setStatusFilterAnchor] = useState<HTMLElement | null>(null);
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
   const [layoutAnchor, setLayoutAnchor] = useState<HTMLElement | null>(null);
@@ -1052,14 +1056,22 @@ export default function PriceReviewPage() {
   const [createLayoutOpen, setCreateLayoutOpen] = useState(false);
   const [expandedSubs, setExpandedSubs] = useState<Set<string>>(new Set());
   const [layoutPartnerFilter, setLayoutPartnerFilter] = useState<string | null>(null);
+  const [layoutCategoryFilter, setLayoutCategoryFilter] = useState<string | null>(null);
+  const [layoutMakeFilter, setLayoutMakeFilter] = useState<string | null>(null);
   const [massActionOpen, setMassActionOpen] = useState(false);
   const [massActionStep, setMassActionStep] = useState<1 | 2>(1);
+  const [editOverrides, setEditOverrides] = useState<Record<number, Record<string, unknown>>>({});
+  const [editingCell, setEditingCell] = useState<{ rowIdx: number; colKey: string } | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+  const [revisedSnackOpen, setRevisedSnackOpen] = useState(false);
   const filteredData = useMemo(() => {
     let data = tableData;
     if (statusFilter.size > 0) data = data.filter(r => statusFilter.has(r.status));
+    if (layoutCategoryFilter) data = data.filter(r => r.serviceLine === layoutCategoryFilter);
+    if (layoutMakeFilter) data = data.filter(r => r.make === layoutMakeFilter);
     if (layoutPartnerFilter) data = data.filter(r => r.partnerName === layoutPartnerFilter);
     return data;
-  }, [tableData, statusFilter, layoutPartnerFilter]);
+  }, [tableData, statusFilter, layoutCategoryFilter, layoutMakeFilter, layoutPartnerFilter]);
   const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
   const isPS = activeInstanceId === 415;
   const activeColumns = isPS ? psColumns : columns;
@@ -1143,24 +1155,88 @@ export default function PriceReviewPage() {
         setMassActionOpen(false);
         setMassActionStep(1);
         setSelectedLayout(null);
+        setLayoutCategoryFilter(null);
+        setLayoutMakeFilter(null);
+        setLayoutPartnerFilter(null);
         return;
       }
       setActiveTourStep(detail.step ?? null);
-      if (detail.action === "open-data-layout") {
-        setRevisedOverlay(null);
-        setStatusOverlay(null);
-        setDrawerOpenRow(null);
-        setMassActionOpen(false);
-        setMassActionStep(1);
-        setSelectedLayout("org-region");
-      } else if (detail.action === "close-data-layout") {
+      if (detail.action === "open-layout-popover") {
         setRevisedOverlay(null);
         setStatusOverlay(null);
         setDrawerOpenRow(null);
         setMassActionOpen(false);
         setMassActionStep(1);
         setSelectedLayout(null);
+        setLayoutCategoryFilter(null);
+        setLayoutMakeFilter(null);
         setLayoutPartnerFilter(null);
+        setExpandedSubs(new Set());
+        const btn = document.querySelector('[data-tour="data-layout-btn"]') as HTMLElement | null;
+        if (btn) setLayoutAnchor(btn);
+      } else if (detail.action === "open-data-layout") {
+        setRevisedOverlay(null);
+        setStatusOverlay(null);
+        setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setSelectedLayout("org-region");
+        setExpandedSubs(new Set(["Brakes::Ford"]));
+        setLayoutAnchor(null);
+      } else if (detail.action === "click-layout-northeast" || detail.action === "segment-after") {
+        setRevisedOverlay(null);
+        setStatusOverlay(null);
+        setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setLayoutAnchor(null);
+        setSelectedLayout("org-region");
+        setExpandedSubs(new Set(["Brakes::Ford"]));
+        setLayoutCategoryFilter("Brakes");
+        setLayoutMakeFilter("Ford");
+        setLayoutPartnerFilter("Northeast");
+        setKpiHighlight(false);
+        setPage(0);
+      } else if (detail.action === "segment-before") {
+        setRevisedOverlay(null);
+        setStatusOverlay(null);
+        setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setLayoutAnchor(null);
+        setSelectedLayout("org-region");
+        setExpandedSubs(new Set(["Brakes::Ford"]));
+        setLayoutCategoryFilter(null);
+        setLayoutMakeFilter(null);
+        setLayoutPartnerFilter(null);
+        setKpiHighlight(false);
+        setPage(0);
+      } else if (detail.action === "highlight-row-plus") {
+        setRevisedOverlay(null);
+        setStatusOverlay(null);
+        setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setLayoutAnchor(null);
+        setSelectedLayout(null);
+        setExpandedSubs(new Set());
+        setLayoutCategoryFilter(null);
+        setLayoutMakeFilter(null);
+        setLayoutPartnerFilter(null);
+        setPage(0);
+      } else if (detail.action === "close-data-layout") {
+        setRevisedOverlay(null);
+        setStatusOverlay(null);
+        setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setLayoutAnchor(null);
+        setSelectedLayout(null);
+        setLayoutCategoryFilter(null);
+        setLayoutMakeFilter(null);
+        setLayoutPartnerFilter(null);
+        setExpandedSubs(new Set());
+        setKpiHighlight(false);
       } else if (detail.action === "close-mass-action") {
         setRevisedOverlay(null);
         setStatusOverlay(null);
@@ -1251,24 +1327,82 @@ export default function PriceReviewPage() {
       if (!detail) {
         setActiveTourStep(null);
         setSelectedLayout(null);
+        setLayoutCategoryFilter(null);
+        setLayoutMakeFilter(null);
         setLayoutPartnerFilter(null);
         setExpandedSubs(new Set());
         setRevisedOverlay(null);
         return;
       }
-      if (detail.action === "open-data-layout") {
-        setRevisedOverlay(null);
-        setDrawerOpenRow(null);
-        setMassActionOpen(false);
-        setMassActionStep(1);
-        setSelectedLayout("org-region");
-      } else if (detail.action === "close-data-layout") {
+      if (detail.action === "open-layout-popover") {
         setRevisedOverlay(null);
         setDrawerOpenRow(null);
         setMassActionOpen(false);
         setMassActionStep(1);
         setSelectedLayout(null);
+        setLayoutCategoryFilter(null);
+        setLayoutMakeFilter(null);
         setLayoutPartnerFilter(null);
+        setExpandedSubs(new Set());
+        const btn = document.querySelector('[data-tour="data-layout-btn"]') as HTMLElement | null;
+        if (btn) setLayoutAnchor(btn);
+      } else if (detail.action === "open-data-layout") {
+        setRevisedOverlay(null);
+        setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setLayoutAnchor(null);
+        setSelectedLayout("org-region");
+        setExpandedSubs(new Set(["Brakes::Ford"]));
+      } else if (detail.action === "click-layout-northeast" || detail.action === "segment-after") {
+        setRevisedOverlay(null);
+        setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setLayoutAnchor(null);
+        setSelectedLayout("org-region");
+        setExpandedSubs(new Set(["Brakes::Ford"]));
+        setLayoutCategoryFilter("Brakes");
+        setLayoutMakeFilter("Ford");
+        setLayoutPartnerFilter("Northeast");
+        setKpiHighlight(false);
+        setPage(0);
+      } else if (detail.action === "segment-before") {
+        setRevisedOverlay(null);
+        setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setLayoutAnchor(null);
+        setSelectedLayout("org-region");
+        setExpandedSubs(new Set(["Brakes::Ford"]));
+        setLayoutCategoryFilter(null);
+        setLayoutMakeFilter(null);
+        setLayoutPartnerFilter(null);
+        setKpiHighlight(false);
+        setPage(0);
+      } else if (detail.action === "highlight-row-plus") {
+        setRevisedOverlay(null);
+        setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setLayoutAnchor(null);
+        setSelectedLayout(null);
+        setExpandedSubs(new Set());
+        setLayoutCategoryFilter(null);
+        setLayoutMakeFilter(null);
+        setLayoutPartnerFilter(null);
+        setPage(0);
+      } else if (detail.action === "close-data-layout") {
+        setRevisedOverlay(null);
+        setDrawerOpenRow(null);
+        setMassActionOpen(false);
+        setMassActionStep(1);
+        setKpiHighlight(false);
+        setSelectedLayout(null);
+        setLayoutCategoryFilter(null);
+        setLayoutMakeFilter(null);
+        setLayoutPartnerFilter(null);
+        setExpandedSubs(new Set());
       } else if (detail.action === "scroll-to-revised") {
         setDrawerOpenRow(null);
         setMassActionOpen(false);
@@ -1455,7 +1589,7 @@ export default function PriceReviewPage() {
             <Box sx={{ borderTop: "3px solid #00446a" }} />
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2, py: 1.5 }}>
               <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#00446a" }}>Data Layout View</Typography>
-              <Typography onClick={() => { setSelectedLayout(null); setLayoutPartnerFilter(null); }} sx={{ fontSize: 16, color: "#00446a", cursor: "pointer", fontWeight: 300 }}>&laquo;</Typography>
+              <Typography onClick={() => { setSelectedLayout(null); setLayoutCategoryFilter(null); setLayoutMakeFilter(null); setLayoutPartnerFilter(null); }} sx={{ fontSize: 16, color: "#00446a", cursor: "pointer", fontWeight: 300 }}>&laquo;</Typography>
             </Box>
             <Box sx={{ px: 2, pb: 1 }}>
               <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.5)" }}>
@@ -1467,67 +1601,76 @@ export default function PriceReviewPage() {
             </Box>
             <Box sx={{ display: "flex", gap: 2, px: 2, mb: 1 }}>
               <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#00446a", cursor: "pointer" }}>COLLAPSE ALL</Typography>
-              <Typography onClick={() => { setLayoutPartnerFilter(null); setPage(0); }} sx={{ fontSize: 11, fontWeight: 600, color: layoutPartnerFilter ? "#00446a" : "rgba(0,0,0,0.3)", cursor: layoutPartnerFilter ? "pointer" : "default" }}>CLEAR SELECTION</Typography>
+              <Typography onClick={() => { setLayoutCategoryFilter(null); setLayoutMakeFilter(null); setLayoutPartnerFilter(null); setPage(0); }} sx={{ fontSize: 11, fontWeight: 600, color: layoutPartnerFilter ? "#00446a" : "rgba(0,0,0,0.3)", cursor: layoutPartnerFilter ? "pointer" : "default" }}>CLEAR SELECTION</Typography>
             </Box>
             <Box sx={{ flex: 1, overflowY: "auto", px: 1 }}>
               {[
-                { label: "Brakes", pct: "22.1%", children: [
-                  { name: "Ford", partners: ["Northeast", "Southeast", "Midwest"] },
-                  { name: "Toyota", partners: ["West", "Northeast"] },
-                  { name: "Honda", partners: ["Southeast", "Midwest"] },
-                  { name: "Chevrolet", partners: ["West", "Northeast", "Southeast"] },
+                { label: "Brakes", completePct: 29, children: [
+                  { name: "Ford", partners: [{ name: "Northeast", pct: 100 }, { name: "Southeast", pct: 42 }, { name: "Midwest", pct: 8 }] },
+                  { name: "Toyota", partners: [{ name: "West", pct: 15 }, { name: "Northeast", pct: 97 }] },
+                  { name: "Honda", partners: [{ name: "Southeast", pct: 0 }, { name: "Midwest", pct: 5 }] },
+                  { name: "Chevrolet", partners: [{ name: "West", pct: 22 }, { name: "Northeast", pct: 96 }, { name: "Southeast", pct: 0 }] },
                 ]},
-                { label: "Filters", pct: "18.4%", children: [
-                  { name: "Toyota", partners: ["Northeast", "West"] },
-                  { name: "BMW", partners: ["Northeast", "Southeast"] },
-                  { name: "Nissan", partners: ["Midwest"] },
-                  { name: "Hyundai", partners: ["West", "Southeast"] },
+                { label: "Filters", completePct: 18, children: [
+                  { name: "Toyota", partners: [{ name: "Northeast", pct: 55 }, { name: "West", pct: 12 }] },
+                  { name: "BMW", partners: [{ name: "Northeast", pct: 38 }, { name: "Southeast", pct: 0 }] },
+                  { name: "Nissan", partners: [{ name: "Midwest", pct: 7 }] },
+                  { name: "Hyundai", partners: [{ name: "West", pct: 0 }, { name: "Southeast", pct: 20 }] },
                 ]},
-                { label: "Engine", pct: "16.7%", children: [
-                  { name: "Ford", partners: ["Midwest", "Northeast"] },
-                  { name: "Chevrolet", partners: ["Southeast", "West"] },
-                  { name: "Honda", partners: ["Northeast"] },
+                { label: "Engine", completePct: 45, children: [
+                  { name: "Ford", partners: [{ name: "Midwest", pct: 72 }, { name: "Northeast", pct: 95 }] },
+                  { name: "Chevrolet", partners: [{ name: "Southeast", pct: 30 }, { name: "West", pct: 18 }] },
+                  { name: "Honda", partners: [{ name: "Northeast", pct: 60 }] },
                 ]},
-                { label: "Suspension", pct: "14.2%", children: [
-                  { name: "Toyota", partners: ["West", "Midwest"] },
-                  { name: "BMW", partners: ["Northeast"] },
-                  { name: "Ford", partners: ["Southeast", "West"] },
+                { label: "Suspension", completePct: 12, children: [
+                  { name: "Toyota", partners: [{ name: "West", pct: 25 }, { name: "Midwest", pct: 3 }] },
+                  { name: "BMW", partners: [{ name: "Northeast", pct: 10 }] },
+                  { name: "Ford", partners: [{ name: "Southeast", pct: 8 }, { name: "West", pct: 15 }] },
                 ]},
-                { label: "Electrical", pct: "10.8%", children: [
-                  { name: "Nissan", partners: ["Midwest", "Southeast"] },
-                  { name: "Hyundai", partners: ["West"] },
-                  { name: "Honda", partners: ["Northeast", "Southeast"] },
+                { label: "Electrical", completePct: 5, children: [
+                  { name: "Nissan", partners: [{ name: "Midwest", pct: 9 }, { name: "Southeast", pct: 0 }] },
+                  { name: "Hyundai", partners: [{ name: "West", pct: 0 }] },
+                  { name: "Honda", partners: [{ name: "Northeast", pct: 10 }, { name: "Southeast", pct: 6 }] },
                 ]},
-                { label: "Cooling", pct: "8.3%", children: [
-                  { name: "Ford", partners: ["Northeast"] },
-                  { name: "Chevrolet", partners: ["Midwest", "West"] },
+                { label: "Cooling", completePct: 95, children: [
+                  { name: "Ford", partners: [{ name: "Northeast", pct: 100 }] },
+                  { name: "Chevrolet", partners: [{ name: "Midwest", pct: 97 }, { name: "West", pct: 88 }] },
                 ]},
-                { label: "Drivetrain", pct: "5.1%", children: [
-                  { name: "Toyota", partners: ["Southeast"] },
-                  { name: "BMW", partners: ["West", "Northeast"] },
+                { label: "Drivetrain", completePct: 100, children: [
+                  { name: "Toyota", partners: [{ name: "Southeast", pct: 100 }] },
+                  { name: "BMW", partners: [{ name: "West", pct: 100 }, { name: "Northeast", pct: 100 }] },
                 ]},
-                { label: "Exhaust", pct: "2.9%", children: [
-                  { name: "Nissan", partners: ["Midwest"] },
-                  { name: "Hyundai", partners: ["Southeast", "West"] },
+                { label: "Exhaust", completePct: 2, children: [
+                  { name: "Nissan", partners: [{ name: "Midwest", pct: 0 }] },
+                  { name: "Hyundai", partners: [{ name: "Southeast", pct: 4 }, { name: "West", pct: 0 }] },
                 ]},
-                { label: "Steering", pct: "1.5%", children: [
-                  { name: "Honda", partners: ["Northeast"] },
-                  { name: "Ford", partners: ["Midwest", "Southeast"] },
+                { label: "Steering", completePct: 8, children: [
+                  { name: "Honda", partners: [{ name: "Northeast", pct: 15 }] },
+                  { name: "Ford", partners: [{ name: "Midwest", pct: 3 }, { name: "Southeast", pct: 6 }] },
                 ]},
-              ].map((folder) => (
+              ].map((folder) => {
+                const folderChipColor = folder.completePct >= 95 ? "#2e7d32" : folder.completePct <= 10 ? "#ed6c02" : "rgba(0,0,0,0.4)";
+                const folderChipBg = folder.completePct >= 95 ? "rgba(46,125,50,0.08)" : folder.completePct <= 10 ? "rgba(237,108,2,0.08)" : "rgba(0,0,0,0.05)";
+                return (
                 <Box key={folder.label}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1, py: 1, cursor: "pointer", borderRadius: "4px", "&:hover": { bgcolor: "rgba(0,0,0,0.03)" } }}>
                     <ExpandMoreIcon sx={{ fontSize: 16, color: "rgba(0,0,0,0.4)" }} />
                     <FolderIcon sx={{ fontSize: 16, color: "rgba(0,0,0,0.25)" }} />
                     <Typography sx={{ fontSize: 12, color: "#333", fontWeight: 500, flex: 1 }}>{folder.label}</Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "rgba(0,0,0,0.2)" }} />
-                      <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{folder.pct}</Typography>
-                    </Box>
+                    <Tooltip title={`${folder.completePct}% of reviews complete`} placement="top" arrow>
+                      <Box sx={{ px: 0.75, py: 0.15, borderRadius: "4px", bgcolor: folderChipBg, lineHeight: 1 }}>
+                        <Typography sx={{ fontSize: 10, fontWeight: 600, color: folderChipColor }}>{folder.completePct}%</Typography>
+                      </Box>
+                    </Tooltip>
                   </Box>
                   {folder.children.map((child) => {
                     const subKey = `${folder.label}::${child.name}`;
                     const isOpen = expandedSubs.has(subKey);
+                    const childTotal = child.partners.length;
+                    const childDone = child.partners.filter(p => p.pct >= 95).length;
+                    const childPct = Math.round((childDone / childTotal) * 100);
+                    const childChipColor = childPct >= 95 ? "#2e7d32" : childPct <= 10 ? "#ed6c02" : "rgba(0,0,0,0.4)";
+                    const childChipBg = childPct >= 95 ? "rgba(46,125,50,0.08)" : childPct <= 10 ? "rgba(237,108,2,0.08)" : "rgba(0,0,0,0.05)";
                     return (
                       <Box key={child.name}>
                         <Box
@@ -1537,23 +1680,38 @@ export default function PriceReviewPage() {
                           <ChevronRightIcon sx={{ fontSize: 14, color: "rgba(0,0,0,0.3)", transition: "transform 0.2s", transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }} />
                           <DescriptionIcon sx={{ fontSize: 14, color: "rgba(0,0,0,0.2)" }} />
                           <Typography sx={{ fontSize: 11, color: "rgba(0,0,0,0.6)", flex: 1 }}>{child.name}</Typography>
-                          <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: "rgba(0,0,0,0.15)" }} />
+                          <Tooltip title={`${childDone}/${childTotal} regions complete`} placement="top" arrow>
+                            <Box sx={{ px: 0.5, py: 0.1, borderRadius: "3px", bgcolor: childChipBg, lineHeight: 1 }}>
+                              <Typography sx={{ fontSize: 9, fontWeight: 600, color: childChipColor }}>{childPct}%</Typography>
+                            </Box>
+                          </Tooltip>
                         </Box>
-                        {isOpen && child.partners.map((partner) => (
+                        {isOpen && child.partners.map((partner) => {
+                          const pChipColor = partner.pct >= 95 ? "#2e7d32" : partner.pct <= 10 ? "#ed6c02" : "rgba(0,0,0,0.4)";
+                          const pChipBg = partner.pct >= 95 ? "rgba(46,125,50,0.08)" : partner.pct <= 10 ? "rgba(237,108,2,0.08)" : "rgba(0,0,0,0.05)";
+                          const isNE = partner.name === "Northeast";
+                          return (
                           <Box
-                            key={partner}
-                            onClick={() => { setLayoutPartnerFilter(prev => prev === partner ? null : partner); setPage(0); }}
-                            sx={{ display: "flex", alignItems: "center", gap: 1, pl: 8, pr: 1, py: 0.5, cursor: "pointer", borderRadius: "4px", bgcolor: layoutPartnerFilter === partner ? "rgba(0,68,106,0.08)" : "transparent", "&:hover": { bgcolor: layoutPartnerFilter === partner ? "rgba(0,68,106,0.12)" : "rgba(0,0,0,0.03)" } }}
+                            key={partner.name}
+                            onClick={() => { setLayoutPartnerFilter(prev => prev === partner.name ? null : partner.name); setPage(0); }}
+                            sx={{ display: "flex", alignItems: "center", gap: 1, pl: 8, pr: 1, py: 0.5, cursor: "pointer", borderRadius: "4px", bgcolor: layoutPartnerFilter === partner.name ? "rgba(0,68,106,0.08)" : isNE ? "rgba(26,143,184,0.08)" : "transparent", "&:hover": { bgcolor: layoutPartnerFilter === partner.name ? "rgba(0,68,106,0.12)" : "rgba(0,0,0,0.03)" } }}
                           >
-                            <PersonIcon sx={{ fontSize: 13, color: layoutPartnerFilter === partner ? "#00446a" : "rgba(0,0,0,0.2)" }} />
-                            <Typography sx={{ fontSize: 10.5, color: layoutPartnerFilter === partner ? "#00446a" : "rgba(0,0,0,0.5)", fontWeight: layoutPartnerFilter === partner ? 600 : 400 }}>{partner}</Typography>
+                            <Typography sx={{ fontSize: 10.5, color: layoutPartnerFilter === partner.name ? "#00446a" : isNE ? "#1a8fb8" : "rgba(0,0,0,0.5)", fontWeight: layoutPartnerFilter === partner.name || isNE ? 600 : 400 }}>{partner.name}</Typography>
+                            <Box sx={{ flex: 1 }} />
+                            <Tooltip title={`${partner.pct}% complete`} placement="top" arrow>
+                              <Box sx={{ px: 0.5, py: 0.1, borderRadius: "3px", bgcolor: pChipBg, lineHeight: 1 }}>
+                                <Typography sx={{ fontSize: 9, fontWeight: 600, color: pChipColor }}>{partner.pct}%</Typography>
+                              </Box>
+                            </Tooltip>
                           </Box>
-                        ))}
+                          );
+                        })}
                       </Box>
                     );
                   })}
                 </Box>
-              ))}
+                );
+              })}
             </Box>
           </Box>
         )}
@@ -1565,9 +1723,6 @@ export default function PriceReviewPage() {
               <Typography variant="h4" sx={{ fontWeight: 400, color: "#00446a", letterSpacing: "0.25px", lineHeight: "42px" }}>
                 Price Review
               </Typography>
-              <Typography sx={{ fontSize: 14, color: "rgba(0,0,0,0.4)", fontWeight: 400 }}>
-                {({ 218: "Fixed Fee Model", 362: "Tax Recommendation Review", 651: "Tax Engagement Fees Review", 415: "Professional Services", 103: "Fixed Fee Model (UAT)", 146: "Tax Engagement Fees (UAT)", 203: "Tax Recommendation (UAT)" } as Record<number, string>)[activeInstanceId] || ""}
-              </Typography>
             </Box>
           </Box>
 
@@ -1578,7 +1733,7 @@ export default function PriceReviewPage() {
             </IconButton>
             <Box ref={kpiScrollRef} sx={{ display: "flex", gap: 1.5, flex: 1, overflow: "hidden", scrollBehavior: "smooth" }}>
               {kpiCards.map((card) => (
-                <Paper key={card.title} elevation={0} sx={{ bgcolor: "white", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", px: 2, py: 1.25, minWidth: 200, flexShrink: 0 }}>
+                <Paper key={card.title} elevation={0} sx={{ bgcolor: "white", border: kpiHighlight ? "2px solid #D97C14" : "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", px: 2, py: 1.25, minWidth: 200, flexShrink: 0, transition: "all 0.3s ease", boxShadow: kpiHighlight ? "0 0 8px rgba(217,124,20,0.2)" : "none" }}>
                   <Typography sx={{ fontSize: 12, fontWeight: 400, letterSpacing: "1px", textTransform: "uppercase", lineHeight: "32px" }}>{card.title}</Typography>
                   <Typography sx={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.15px", lineHeight: "24px" }}>{card.value}</Typography>
                 </Paper>
@@ -1608,8 +1763,8 @@ export default function PriceReviewPage() {
             <Button data-tour="mass-action-btn" variant="outlined" size="small" onClick={() => setMassActionOpen(true)} sx={{ height: 30, px: 1.5, borderColor: selectedRows.size > 0 ? "rgba(0,0,0,0.24)" : "rgba(0,0,0,0.12)", borderRadius: "6px", fontSize: 10, fontWeight: 500, textTransform: "none", minWidth: 0, color: selectedRows.size > 0 ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.6)", "&:hover": { bgcolor: "rgba(0,0,0,0.04)", borderColor: "rgba(0,0,0,0.24)" } }}>
               Create Mass Action{selectedRows.size > 0 ? ` to ${selectedRows.size} Items` : ""}
             </Button>
-            <Button variant="outlined" size="small" sx={{ height: 30, px: 1.5, borderColor: "rgba(0,0,0,0.12)", borderRadius: "6px", color: "rgba(0,0,0,0.6)", fontSize: 10, fontWeight: 500, textTransform: "none", minWidth: 0, "&:hover": { bgcolor: "rgba(0,0,0,0.04)", borderColor: "rgba(0,0,0,0.24)" } }}>
-              Mark as Complete
+            <Button variant="outlined" size="small" disabled={selectedRows.size === 0} onClick={() => { selectedRows.forEach(idx => { setEditOverrides(prev => ({ ...prev, [idx]: { ...prev[idx], status: "Complete" } })); }); setSelectedRows(new Set()); }} sx={{ height: 30, px: 1.5, borderColor: selectedRows.size > 0 ? "#2e7d32" : "rgba(0,0,0,0.12)", borderRadius: "6px", color: selectedRows.size > 0 ? "#2e7d32" : "rgba(0,0,0,0.38)", fontSize: 10, fontWeight: 500, textTransform: "none", minWidth: 0, "&:hover": { bgcolor: "rgba(46,125,50,0.04)", borderColor: "#2e7d32" } }}>
+              Mark as Complete{selectedRows.size > 0 ? ` (${selectedRows.size})` : ""}
             </Button>
             <Box sx={{ flex: 1 }} />
             <IconButton
@@ -1632,7 +1787,15 @@ export default function PriceReviewPage() {
           </Box>
 
           {/* Table */}
-          <TableContainer ref={tableContainerRef} data-tour="data-table" component={Paper} elevation={0} sx={{ flex: 1, mx: 3, bgcolor: "white", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.08)", overflow: "auto", position: "relative" }}>
+          <TableContainer ref={tableContainerRef} data-tour="data-table" component={Paper} elevation={0} sx={{ flex: 1, mx: 3, bgcolor: "white", borderRadius: "8px", border: kpiHighlight ? "2px solid #D97C14" : "1px solid rgba(0,0,0,0.08)", overflow: "auto", position: "relative", transition: "all 0.3s ease", boxShadow: kpiHighlight ? "0 0 12px rgba(217,124,20,0.15)" : "none" }}>
+            {kpiHighlight && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 2, py: 0.75, bgcolor: "rgba(217,124,20,0.06)", borderBottom: "1px solid rgba(217,124,20,0.15)" }}>
+                <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#D97C14" }} />
+                <Typography sx={{ fontSize: 11, color: "#D97C14", fontWeight: 600 }}>
+                  Filtered to Ford → Northeast · {filteredData.length} items (was {tableData.length})
+                </Typography>
+              </Box>
+            )}
             <Table size="small" stickyHeader sx={{ minWidth: totalMinWidth }}>
               <TableHead>
                 <TableRow>
@@ -1669,14 +1832,123 @@ export default function PriceReviewPage() {
                     <TableCell padding="checkbox" sx={{ ...bodyCellSx, width: 42, minWidth: 42 }}>
                       <Checkbox size="small" sx={{ p: 0, color: isSelected ? "#00446a" : undefined, "&.Mui-checked": { color: "#00446a" } }} checked={isSelected} onChange={() => toggleRow(globalIdx)} />
                     </TableCell>
-                    <TableCell sx={{ ...bodyCellSx, width: 38, minWidth: 38 }}>
+                    <TableCell data-tour={idx === 0 ? "row-detail-btn" : undefined} sx={{ ...bodyCellSx, width: 38, minWidth: 38 }}>
                       <AddCircleOutlineIcon onClick={() => { setDrawerOpenRow(drawerOpenRow === globalIdx ? null : globalIdx); setActiveDrawerTab(isPS && globalIdx === 0 ? "decision-support" : "explain"); setAnalyticsPreload(undefined); }} sx={{ fontSize: 20, color: drawerOpenRow === globalIdx ? "#00446a" : "rgba(0,0,0,0.4)", cursor: "pointer" }} />
                     </TableCell>
-                    {activeColumns.map((col) => (
-                      <TableCell key={col.key} align={col.align || "left"} sx={bodyCellSx}>
-                        {col.render ? col.render(row) : (row as unknown as Record<string, unknown>)[col.key] as React.ReactNode}
-                      </TableCell>
-                    ))}
+                    {activeColumns.map((col) => {
+                      const overrides = editOverrides[globalIdx] || {};
+                      const effectiveRow = Object.keys(overrides).length > 0 ? { ...row, ...overrides } as RowData : row;
+                      const isEditableBlue = (isPS && col.key === "revisedBillRate") || (!isPS && col.key === "revisedPrice");
+                      const isStatusCol = col.key === "status";
+                      const isEditing = editingCell?.rowIdx === globalIdx && editingCell?.colKey === col.key;
+
+                      if (isStatusCol) {
+                        const status = effectiveRow.status;
+                        const sc = statusColors[status] || { bg: "#f5f5f5", color: "#333" };
+                        return (
+                          <TableCell key={col.key} sx={bodyCellSx}>
+                            <Select
+                              value={status}
+                              onChange={(e) => {
+                                setEditOverrides(prev => ({
+                                  ...prev,
+                                  [globalIdx]: { ...prev[globalIdx], status: e.target.value }
+                                }));
+                              }}
+                              variant="standard"
+                              disableUnderline
+                              IconComponent={() => null}
+                              sx={{
+                                minWidth: 0,
+                                "& .MuiSelect-select": { p: "0 !important", display: "flex", alignItems: "center" },
+                              }}
+                              renderValue={(val) => {
+                                const c = statusColors[val as string] || { bg: "#f5f5f5", color: "#333" };
+                                return (
+                                  <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, px: 1, py: 0.25, borderRadius: "4px", bgcolor: c.bg, cursor: "pointer" }}>
+                                    <Typography sx={{ fontSize: 11, fontWeight: 500, color: c.color, whiteSpace: "nowrap" }}>{val}</Typography>
+                                    <ExpandMoreIcon sx={{ fontSize: 14, color: c.color }} />
+                                  </Box>
+                                );
+                              }}
+                            >
+                              {["Needs Review", "Complete", "Revised"].map(s => {
+                                const c = statusColors[s] || { bg: "#f5f5f5", color: "#333" };
+                                return (
+                                  <MenuItem key={s} value={s} sx={{ py: 0.5 }}>
+                                    <Box sx={{ display: "inline-flex", alignItems: "center", px: 1, py: 0.25, borderRadius: "4px", bgcolor: c.bg }}>
+                                      <Typography sx={{ fontSize: 11, fontWeight: 500, color: c.color }}>{s}</Typography>
+                                    </Box>
+                                  </MenuItem>
+                                );
+                              })}
+                            </Select>
+                          </TableCell>
+                        );
+                      }
+
+                      if (isEditableBlue && isEditing) {
+                        return (
+                          <TableCell key={col.key} align={col.align || "left"} sx={bodyCellSx}>
+                            <Box sx={{ bgcolor: "#b3e5fc", px: 1, py: 0.25, borderRadius: "2px" }}>
+                              <input
+                                autoFocus
+                                value={editingValue}
+                                onChange={(e) => setEditingValue(e.target.value)}
+                                onBlur={() => {
+                                  const num = parseFloat(editingValue.replace(/[^0-9.-]/g, ""));
+                                  if (!isNaN(num)) {
+                                    setEditOverrides(prev => ({
+                                      ...prev,
+                                      [globalIdx]: { ...prev[globalIdx], [col.key]: num, status: "Revised" }
+                                    }));
+                                    setRevisedSnackOpen(true);
+                                  }
+                                  setEditingCell(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                  if (e.key === "Escape") setEditingCell(null);
+                                }}
+                                style={{
+                                  border: "none",
+                                  outline: "none",
+                                  background: "transparent",
+                                  fontFamily: "Inter, sans-serif",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  width: "100%",
+                                  textAlign: col.align === "right" ? "right" : "left",
+                                }}
+                              />
+                            </Box>
+                          </TableCell>
+                        );
+                      }
+
+                      if (isEditableBlue) {
+                        return (
+                          <TableCell
+                            key={col.key}
+                            align={col.align || "left"}
+                            sx={{ ...bodyCellSx, cursor: "text" }}
+                            onClick={() => {
+                              setEditingCell({ rowIdx: globalIdx, colKey: col.key });
+                              const val = (effectiveRow as unknown as Record<string, unknown>)[col.key];
+                              setEditingValue(val != null ? String(val) : "");
+                            }}
+                          >
+                            {col.render ? col.render(effectiveRow) : (effectiveRow as unknown as Record<string, unknown>)[col.key] as React.ReactNode}
+                          </TableCell>
+                        );
+                      }
+
+                      return (
+                        <TableCell key={col.key} align={col.align || "left"} sx={bodyCellSx}>
+                          {col.render ? col.render(effectiveRow) : (effectiveRow as unknown as Record<string, unknown>)[col.key] as React.ReactNode}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                   );
                 })}
@@ -2381,6 +2653,7 @@ export default function PriceReviewPage() {
         anchorEl={layoutAnchor}
         onClose={() => setLayoutAnchor(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        sx={{ zIndex: 1403 }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
         slotProps={{ paper: { sx: { width: 360, borderRadius: "8px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", mt: 0.5 } } }}
       >
@@ -2401,7 +2674,7 @@ export default function PriceReviewPage() {
           {[
             { id: "org-region", name: "Category Overview", creator: "Admin", desc: "Review completion by category, make, and region", isDefault: true },
             { id: "default", name: "Default Layout", creator: "System Default", desc: "All items in a single flat list" },
-            { id: "custom-1", name: "Make + Model View", creator: "Cathryn Greene", desc: "Track pricing progress per vehicle make" },
+            { id: "custom-1", name: "Make + Model View", creator: "Sarah Mitchell", desc: "Track pricing progress per vehicle make" },
             { id: "org-product", name: "Region + Category", creator: "Jeremy Heit", desc: "See each region's book of business" },
             { id: "region-view", name: "Product Tier View", creator: "Admin", desc: "Compare review status across product tiers" },
           ].map((layout) => (
@@ -2727,6 +3000,17 @@ export default function PriceReviewPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Snackbar
+        open={revisedSnackOpen}
+        autoHideDuration={6000}
+        onClose={() => setRevisedSnackOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setRevisedSnackOpen(false)} severity="info" variant="filled" sx={{ width: "100%", bgcolor: "#00446a", "& .MuiAlert-icon": { color: "white" } }}>
+          Price updated — use the Status column to mark this row complete, or select multiple checkboxes and click "Mark as Complete" in the toolbar.
+        </Alert>
+      </Snackbar>
     </AppShell>
   );
 }

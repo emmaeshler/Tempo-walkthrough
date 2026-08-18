@@ -111,7 +111,99 @@ function VisualModelOverview() { return <ModelDiagram highlight="all" />; }
 function VisualInputs() { return <ModelDiagram highlight="inputs" />; }
 function VisualEngine() { return <ModelDiagram highlight="engine" />; }
 function VisualOutputs() { return <ModelDiagram highlight="outputs" />; }
-function VisualFeedback() { return <ModelDiagram highlight="feedback" />; }
+function VisualFeedback() {
+  const aw = 460, ah = 210;
+  const modelCx = 185, modelCy = 55, modelR = 32;
+  const priceX = 320, priceY = 30, priceW = 120, priceH = 50;
+  const outcomeX = 310, outcomeY = 125, outcomeW = 130, outcomeH = 50;
+  const fbX = 168, fbY = 130, fbW = 90, fbH = 26;
+  const tdX = 30, tdY = 130, tdW = 110, tdH = 26;
+
+  const inputs = [
+    { label: "Internal Data", color: G, y: 18 },
+    { label: "Market Insights", color: G, y: 46 },
+    { label: "Industry Expertise", color: B, y: 74 },
+    { label: "In-House Knowledge", color: B, y: 102 },
+  ];
+
+  return (
+    <svg viewBox={`0 0 ${aw} ${ah}`}>
+      <text x="10" y="12" fontSize="7" fill={G} fontWeight="700" letterSpacing="1">DATA INPUTS</text>
+
+      {inputs.map((inp, i) => (
+        <g key={i}>
+          <rect x="5" y={inp.y} width="115" height="24" rx="4" fill="white" stroke={inp.color} strokeWidth="1" />
+          <text x="62" y={inp.y + 15} fontSize="8.5" fill={inp.color} fontWeight="600" textAnchor="middle">{inp.label}</text>
+          <line x1="120" y1={inp.y + 12} x2={modelCx - modelR - 2} y2={modelCy} stroke={inp.color} strokeWidth="1" opacity="0.3" />
+          <circle cx="120" cy={inp.y + 12} r="2" fill={inp.color} opacity="0.3" />
+        </g>
+      ))}
+
+      {/* Model circle */}
+      <circle cx={modelCx} cy={modelCy} r={modelR} fill={P} />
+      <text x={modelCx} y={modelCy - 4} fontSize="10" fill="white" textAnchor="middle" fontWeight="700">Tempo</text>
+      <text x={modelCx} y={modelCy + 9} fontSize="8.5" fill="rgba(255,255,255,0.7)" textAnchor="middle">Model</text>
+
+      {/* Arrow: Model → Recommended Price */}
+      <line x1={modelCx + modelR + 4} y1={modelCy} x2={priceX - 2} y2={modelCy} stroke={P} strokeWidth="1.5" />
+      <polygon points={`${priceX - 4},${modelCy - 4} ${priceX + 4},${modelCy} ${priceX - 4},${modelCy + 4}`} fill={P} />
+
+      {/* Recommended Price box */}
+      <rect x={priceX} y={priceY} width={priceW} height={priceH} rx="6" fill={G} />
+      <text x={priceX + priceW / 2} y={priceY + 22} fontSize="9" fill="white" textAnchor="middle" fontWeight="700">Recommended</text>
+      <text x={priceX + priceW / 2} y={priceY + 35} fontSize="9" fill="white" textAnchor="middle" fontWeight="700">Price</text>
+
+      {/* Arrow down: Price → Outcomes */}
+      <line x1={priceX + priceW / 2 + 20} y1={priceY + priceH + 2} x2={outcomeX + outcomeW / 2 + 10} y2={outcomeY - 2} stroke={G} strokeWidth="1.5" />
+      <polygon points={`${outcomeX + outcomeW / 2 + 6},${outcomeY - 4} ${outcomeX + outcomeW / 2 + 14},${outcomeY - 4} ${outcomeX + outcomeW / 2 + 10},${outcomeY + 4}`} fill={G} />
+
+      {/* Market Outcomes box */}
+      <rect x={outcomeX} y={outcomeY} width={outcomeW} height={outcomeH} rx="6" fill="white" stroke={O} strokeWidth="1.5" />
+      <text x={outcomeX + outcomeW / 2} y={outcomeY + 16} fontSize="8.5" fill={O} textAnchor="middle" fontWeight="700">Market Outcomes</text>
+      <text x={outcomeX + outcomeW / 2} y={outcomeY + 29} fontSize="7" fill="rgba(0,0,0,0.4)" textAnchor="middle">Wins · Losses · Overrides</text>
+      <text x={outcomeX + outcomeW / 2} y={outcomeY + 40} fontSize="7" fill="rgba(0,0,0,0.4)" textAnchor="middle">Acceptance · Concessions</text>
+
+      {/* Arrow: Outcomes → Feedback */}
+      <line x1={outcomeX} y1={fbY + fbH / 2} x2={fbX + fbW + 2} y2={fbY + fbH / 2} stroke={O} strokeWidth="1.5" />
+      <polygon points={`${fbX + fbW + 4},${fbY + fbH / 2 - 4} ${fbX + fbW - 4},${fbY + fbH / 2} ${fbX + fbW + 4},${fbY + fbH / 2 + 4}`} fill={O} />
+
+      {/* Feedback box */}
+      <rect x={fbX} y={fbY} width={fbW} height={fbH} rx="5" fill="#fdf5ec" stroke={O} strokeWidth="1" strokeDasharray="4 2" />
+      <text x={fbX + fbW / 2} y={fbY + 11} fontSize="7.5" fill={O} textAnchor="middle" fontWeight="700">FEEDBACK</text>
+      <text x={fbX + fbW / 2} y={fbY + 21} fontSize="6.5" fill={O} textAnchor="middle" opacity="0.7">reweights drivers</text>
+
+      {/* Arrow: Feedback → Updated Training Data */}
+      <line x1={fbX} y1={fbY + fbH / 2} x2={tdX + tdW + 2} y2={tdY + tdH / 2} stroke={O} strokeWidth="1.5" />
+      <polygon points={`${tdX + tdW + 4},${tdY + tdH / 2 - 4} ${tdX + tdW - 4},${tdY + tdH / 2} ${tdX + tdW + 4},${tdY + tdH / 2 + 4}`} fill={O} />
+
+      {/* Updated Training Data box */}
+      <rect x={tdX} y={tdY} width={tdW} height={tdH} rx="5" fill="white" stroke={B} strokeWidth="1" />
+      <text x={tdX + tdW / 2} y={tdY + 11} fontSize="7.5" fill={B} textAnchor="middle" fontWeight="600">Updated Training Data</text>
+      <text x={tdX + tdW / 2} y={tdY + 21} fontSize="6.5" fill="rgba(0,0,0,0.4)" textAnchor="middle">New baselines &amp; weights</text>
+
+      {/* Arrow: Updated Training → back up to inputs */}
+      <path d={`M${tdX},${tdY + tdH / 2} L12,${tdY + tdH / 2} L12,${inputs[3].y + 24 + 4}`} fill="none" stroke={B} strokeWidth="1.5" strokeDasharray="5 3" />
+      <polygon points={`8,${inputs[3].y + 24 + 6} 12,${inputs[3].y + 24 - 2} 16,${inputs[3].y + 24 + 6}`} fill={B} />
+
+      {/* Cycle number badges */}
+      {[
+        { n: "1", x: modelCx, y: modelCy - modelR - 8 },
+        { n: "2", x: priceX + priceW / 2, y: priceY - 8 },
+        { n: "3", x: outcomeX + outcomeW / 2 + 10, y: outcomeY - 8 },
+        { n: "4", x: fbX + fbW / 2, y: fbY - 8 },
+        { n: "5", x: 12, y: tdY - 4 },
+      ].map((b) => (
+        <g key={b.n}>
+          <circle cx={b.x} cy={b.y} r="7" fill={P} />
+          <text x={b.x} y={b.y + 3.5} fontSize="7" fill="white" textAnchor="middle" fontWeight="700">{b.n}</text>
+        </g>
+      ))}
+
+      {/* Cycle label */}
+      <text x={aw / 2} y={ah - 6} fontSize="8.5" fill={P} textAnchor="middle" fontWeight="600" opacity="0.7">Each cycle starts smarter — tighter intervals, fewer overrides</text>
+    </svg>
+  );
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    Drivers Visual — Customer factors → Pricing Model → Recommended Price
@@ -274,46 +366,40 @@ function VisualFourInputs() {
    ═══════════════════════════════════════════════════════════════════ */
 
 function VisualReviewFlow() {
-  const bh = 36, gap = 8;
+  const inputs = [
+    { label: "Internal Data", color: G, y: 20 },
+    { label: "Market Insights", color: G, y: 58 },
+    { label: "In-House Knowledge", color: B, y: 104 },
+    { label: "Industry Expertise", color: B, y: 142 },
+  ];
+  const cx = 370, cy = 90, outerR = 72, innerR = 56;
 
   return (
-    <svg viewBox="0 0 460 145">
-      {/* Step 1: Model Recommendation */}
-      <rect x="5" y="15" width="120" height="70" rx="8" fill={P} />
-      <text x="65" y="40" fontSize="9" fill="white" textAnchor="middle" fontWeight="700">Recommended</text>
-      <text x="65" y="54" fontSize="9" fill="white" textAnchor="middle" fontWeight="700">Price</text>
-      <text x="65" y="70" fontSize="7.5" fill="rgba(255,255,255,0.55)" textAnchor="middle">Calibrated per deal</text>
+    <svg viewBox="0 0 470 185">
+      <text x="8" y="14" fontSize="8" fill={G} fontWeight="700" letterSpacing="1">DATA INPUTS</text>
+      <text x="8" y="98" fontSize="8" fill={B} fontWeight="700" letterSpacing="1">EXPERTISE INPUTS</text>
 
-      {/* Arrow 1 */}
-      <line x1="130" y1="50" x2="158" y2="50" stroke="#ccc" strokeWidth="1.5" />
-      <polygon points="156,46 164,50 156,54" fill="#ccc" />
+      {inputs.map((inp, i) => (
+        <g key={i}>
+          <rect x="5" y={inp.y} width="150" height="28" rx="5" fill="white" stroke={inp.color} strokeWidth="1" />
+          <text x="14" y={inp.y + 18} fontSize="11" fill={inp.color} fontWeight="600">{inp.label}</text>
+          <line x1="155" y1={inp.y + 14} x2={cx - outerR + 4} y2={cy} stroke={inp.color} strokeWidth="1" opacity="0.3" />
+          <circle cx="155" cy={inp.y + 14} r="2.5" fill={inp.color} opacity="0.3" />
+        </g>
+      ))}
 
-      {/* Step 2: Blue column — reviewer workspace */}
-      <rect x="168" y="8" width="128" height="84" rx="8" fill="#e8f4fd" stroke={B} strokeWidth="1.5" />
-      <text x="232" y="26" fontSize="7" fill={B} fontWeight="700" letterSpacing="1">REVIEWER</text>
-      <rect x="180" y="32" width="104" height={bh} rx="5" fill="white" stroke="#ddd" strokeWidth="1" />
-      <text x="195" y="47" fontSize="8" fill={G} fontWeight="700">✓</text>
-      <text x="208" y="48" fontSize="9" fill="#333" fontWeight="500">Accept</text>
-      <text x="268" y="48" fontSize="7.5" fill="#999">as-is</text>
-      <rect x="180" y={32 + bh + gap} width="104" height={bh} rx="5" fill="white" stroke={O} strokeWidth="1.5" />
-      <text x="195" y={32 + bh + gap + 15} fontSize="8" fill={O} fontWeight="700">✎</text>
-      <text x="208" y={32 + bh + gap + 16} fontSize="9" fill="#333" fontWeight="500">Adjust</text>
-      <text x="253" y={32 + bh + gap + 16} fontSize="7.5" fill="#999">override</text>
+      <circle cx={cx} cy={cy} r={outerR} fill={P} />
+      <circle cx={cx} cy={cy} r={innerR} fill="#1a6e8e" />
+      <clipPath id="rv-top"><rect x={cx - innerR} y={cy - innerR} width={innerR * 2} height={innerR} /></clipPath>
+      <clipPath id="rv-bot"><rect x={cx - innerR} y={cy} width={innerR * 2} height={innerR} /></clipPath>
+      <circle cx={cx} cy={cy} r={innerR} fill={G} clipPath="url(#rv-top)" opacity="0.85" />
+      <circle cx={cx} cy={cy} r={innerR} fill="#5a9eba" clipPath="url(#rv-bot)" />
+      <line x1={cx - innerR + 8} y1={cy} x2={cx + innerR - 8} y2={cy} stroke="white" strokeWidth="1.5" strokeDasharray="5 4" opacity="0.5" />
 
-      {/* Arrow 2 */}
-      <line x1="300" y1="50" x2="328" y2="50" stroke="#ccc" strokeWidth="1.5" />
-      <polygon points="326,46 334,50 326,54" fill="#ccc" />
+      <text x={cx} y={cy - 10} fontSize="12" fill="white" textAnchor="middle" fontWeight="700">ML Prediction</text>
+      <text x={cx} y={cy + 22} fontSize="12" fill="white" textAnchor="middle" fontWeight="700">Strategic Guidance</text>
 
-      {/* Step 3: Final price */}
-      <rect x="338" y="15" width="110" height="70" rx="8" fill={G} />
-      <text x="393" y="40" fontSize="9" fill="white" textAnchor="middle" fontWeight="700">Final Price</text>
-      <text x="393" y="55" fontSize="7.5" fill="rgba(255,255,255,0.6)" textAnchor="middle">Implemented</text>
-      <text x="393" y="68" fontSize="7.5" fill="rgba(255,255,255,0.6)" textAnchor="middle">or sent for approval</text>
-
-      {/* Feedback arc */}
-      <path d="M393,88 C393,120 65,120 65,88" fill="none" stroke={B} strokeWidth="1" strokeDasharray="4 3" opacity="0.4" />
-      <polygon points="63,90 67,90 65,96" fill={B} opacity="0.4" />
-      <text x="230" y="128" fontSize="7" fill={B} textAnchor="middle" opacity="0.6">Outcome feeds back → next cycle starts smarter</text>
+      <text x={cx + 12} y={cy + outerR + 16} fontSize="9" fill={P} textAnchor="middle" fontStyle="italic" opacity="0.6">AI Execution Layer</text>
     </svg>
   );
 }
@@ -330,6 +416,10 @@ export interface SubStep {
   target?: string;
   action?: string;
   Visual?: () => React.JSX.Element;
+  toggle?: {
+    before: { label: string; action: string; caption: string; target?: string };
+    after: { label: string; action: string; caption: string; target?: string };
+  };
 }
 
 export interface TourStep {
@@ -491,7 +581,7 @@ export const STEPS: TourStep[] = [
         detail: "",
       },
       {
-        label: "Review Flow",
+        label: "How the Model Works",
         title: "How the Model Works",
         caption:
           "The **recommended price** in the blue column is the model's starting point — calibrated from your data.\nYou **accept it as-is** or **adjust it** with your judgment — market context, relationship knowledge, strategic priorities.\nYour decision becomes the **final price**. That outcome feeds back into the model, making the **next cycle's starting point smarter**.",
@@ -573,7 +663,7 @@ export const STEPS: TourStep[] = [
           "Click **Data Layouts** to configure a view — think of it like a **pivot table**.\nNest by **category, make, region** — whatever hierarchy fits your workflow.\nSave it, name it, and **share it** with your team.",
         detail: "",
         target: "data-layout-btn",
-        action: "close-data-layout",
+        action: "open-layout-popover",
       },
       {
         label: "Result",
@@ -583,6 +673,35 @@ export const STEPS: TourStep[] = [
         detail: "",
         target: "data-layout-panel",
         action: "open-data-layout",
+      },
+      {
+        label: "Segment Click",
+        title: "Click a Segment, See the Data Change",
+        caption:
+          "Toggle between the **full book** and a **filtered segment** to see how the view changes.\nKPIs, row count, every metric **recalculates on the spot**.\nNo page reloads, no manual filtering — **click and review**.",
+        detail: "",
+        target: "data-table",
+        action: "click-layout-northeast",
+        toggle: {
+          before: { label: "Before", action: "segment-before", caption: "Your **full pricing book** — every product, every region, every make.\n**62 items** across all categories.\nKPIs reflect the **entire portfolio**." },
+          after: { label: "After", action: "segment-after", caption: "Filtered to **Brakes → Ford → Northeast** — just the segment you need.\nKPIs, row count, every metric **recalculates on the spot**.\nNo page reloads, no manual filtering — **click and review**." },
+        },
+      },
+    ],
+  },
+  {
+    page: "/price-review",
+    target: "row-detail-btn",
+    action: "highlight-row-plus",
+    icon: "➕",
+    color: "#00446a",
+    title: "Decision Support Per Row",
+    subs: [
+      {
+        label: "Feature",
+        caption:
+          "Every row has a **+** button that opens **decision support** for that item.\nIt gives reps the **context and confidence** they need to stand behind their pricing.\nThe more often reps **review and adjust prices**, the better for your business — every decision makes the model smarter.",
+        detail: "",
       },
     ],
   },
@@ -628,7 +747,7 @@ export const STEPS: TourStep[] = [
         caption:
           "Every tool in this drawer is **powered by the same model** — the inputs you configure shape what reviewers see.\n**Explain the Price** pulls from the model's weighted drivers to narrate **why** a price landed where it did.\n**Elasticity & Price Comps** use transaction history and market data to show **trade-offs and peer context** in real time.\nThe model doesn't just produce a number — it produces the **evidence and reasoning** reviewers need to act with confidence.",
         detail: "",
-        Visual: VisualFourInputs,
+        Visual: VisualReviewFlow,
       },
     ],
   },

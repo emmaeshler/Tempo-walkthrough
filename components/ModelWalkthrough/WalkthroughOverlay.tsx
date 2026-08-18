@@ -24,7 +24,12 @@ export default function WalkthroughOverlay() {
   const pathname = usePathname();
   const [spotlight, setSpotlight] = useState<SpotlightRect | null>(null);
   const [subStep, setSubStep] = useState(0);
+  const [toggleState, setToggleState] = useState<"after" | "before">("after");
   const [navigating, setNavigating] = useState(false);
+  const [visualExpanded, setVisualExpanded] = useState(false);
+  const [stepInputOpen, setStepInputOpen] = useState(false);
+  const [stepInputValue, setStepInputValue] = useState("");
+  const stepInputRef = useRef<HTMLInputElement>(null);
   const rafRef = useRef<number>(0);
 
   const step = STEPS[currentStep];
@@ -33,7 +38,9 @@ export default function WalkthroughOverlay() {
   const hasSubs = step?.subs.length > 1;
   const activeSub = step?.subs[subStep] ?? step?.subs[0];
 
-  const activeTarget = activeSub?.target ?? step?.target;
+  const toggleConfig = activeSub?.toggle;
+  const activeToggle = toggleConfig ? toggleConfig[toggleState] : null;
+  const activeTarget = activeToggle?.target ?? activeSub?.target ?? step?.target;
 
   const measureTarget = useCallback(() => {
     if (!activeTarget) {
@@ -57,6 +64,9 @@ export default function WalkthroughOverlay() {
 
   useEffect(() => {
     setSubStep(0);
+    setVisualExpanded(false);
+    setToggleState("after");
+    setStepInputOpen(false);
   }, [currentStep]);
 
   useEffect(() => {
@@ -136,7 +146,7 @@ export default function WalkthroughOverlay() {
     return () => window.removeEventListener("keydown", handler);
   }, [isOpen, close, next, prev]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !step) return null;
 
   const CARD_W = 540;
   const GAP = 20;
@@ -145,8 +155,13 @@ export default function WalkthroughOverlay() {
 
   let cardStyle: Record<string, unknown>;
 
+  const segmentActions = ["click-layout-northeast", "segment-before", "segment-after", "highlight-row-plus"];
+  const isSegmentAction = segmentActions.includes(activeSub?.action ?? "") || segmentActions.includes(activeToggle?.action ?? "");
+
   if (!spotlight && (step.action === "open-mass-action" || activeSub?.action === "open-mass-action")) {
     cardStyle = { position: "fixed" as const, top: GAP, right: GAP, width: CARD_W };
+  } else if (!spotlight && isSegmentAction) {
+    cardStyle = { position: "fixed" as const, top: GAP, left: GAP, width: CARD_W };
   } else if (!spotlight) {
     cardStyle = { position: "fixed" as const, top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 620 };
   } else {
@@ -175,7 +190,7 @@ export default function WalkthroughOverlay() {
 
   return (
     <>
-      <Box onClick={close} sx={{ position: "fixed", inset: 0, zIndex: 1400, pointerEvents: "auto" }} />
+      <Box sx={{ position: "fixed", inset: 0, zIndex: 1400, pointerEvents: "auto" }} />
 
       {spotlight && (
         <Box
@@ -235,18 +250,79 @@ export default function WalkthroughOverlay() {
         <Box sx={{ bgcolor: step.color, px: 4, py: 3, display: "flex", alignItems: "center", gap: 2.5, flexShrink: 0 }}>
           <Box component="img" src="/tempo-logo-white.png" alt="Tempo" sx={{ height: 36, width: "auto", flexShrink: 0 }} />
           <Box>
-            <Typography
-              sx={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "rgba(255,255,255,0.6)",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                mb: 0.25,
-              }}
-            >
-              Step {currentStep + 1} of {totalSteps}
-            </Typography>
+            {stepInputOpen ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  mb: 0.25,
+                }}
+              >
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.6)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                  Step
+                </Typography>
+                <Box
+                  component="input"
+                  ref={stepInputRef}
+                  value={stepInputValue}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStepInputValue(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent) => {
+                    e.stopPropagation();
+                    if (e.key === "Enter") {
+                      const num = parseInt(stepInputValue, 10);
+                      if (num >= 1 && num <= totalSteps) goToStep(num - 1);
+                      setStepInputOpen(false);
+                    } else if (e.key === "Escape") {
+                      setStepInputOpen(false);
+                    }
+                  }}
+                  onBlur={() => {
+                    const num = parseInt(stepInputValue, 10);
+                    if (num >= 1 && num <= totalSteps) goToStep(num - 1);
+                    setStepInputOpen(false);
+                  }}
+                  sx={{
+                    width: 32,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "white",
+                    bgcolor: "rgba(255,255,255,0.2)",
+                    border: "1px solid rgba(255,255,255,0.4)",
+                    borderRadius: "4px",
+                    textAlign: "center",
+                    outline: "none",
+                    px: 0.5,
+                    py: 0,
+                    letterSpacing: "0.1em",
+                    fontFamily: "inherit",
+                  }}
+                />
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.6)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                  of {totalSteps}
+                </Typography>
+              </Box>
+            ) : (
+              <Typography
+                onClick={() => {
+                  setStepInputValue(String(currentStep + 1));
+                  setStepInputOpen(true);
+                  setTimeout(() => stepInputRef.current?.select(), 0);
+                }}
+                sx={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "rgba(255,255,255,0.6)",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  mb: 0.25,
+                  cursor: "pointer",
+                  "&:hover": { color: "rgba(255,255,255,0.85)" },
+                }}
+              >
+                Step {currentStep + 1} of {totalSteps}
+              </Typography>
+            )}
             <Typography
               sx={{
                 fontSize: 24,
@@ -291,25 +367,132 @@ export default function WalkthroughOverlay() {
             </Box>
           )}
 
+          {/* Before / After toggle */}
+          {toggleConfig && (
+            <Box sx={{ display: "flex", bgcolor: "rgba(0,0,0,0.04)", borderRadius: "8px", p: 0.5, mb: 2, gap: 0.5 }}>
+              {(["before", "after"] as const).map((key) => (
+                <Box
+                  key={key}
+                  onClick={() => {
+                    setToggleState(key);
+                    window.dispatchEvent(new CustomEvent("tour-step", {
+                      detail: { step: currentStep, action: toggleConfig[key].action },
+                    }));
+                    setTimeout(measureTarget, 150);
+                  }}
+                  sx={{
+                    flex: 1,
+                    py: 0.75,
+                    textAlign: "center",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    transition: "all 0.2s ease",
+                    bgcolor: toggleState === key ? "white" : "transparent",
+                    color: toggleState === key ? step.color : "rgba(0,0,0,0.45)",
+                    boxShadow: toggleState === key ? "0 1px 3px rgba(0,0,0,0.12)" : "none",
+                  }}
+                >
+                  {toggleConfig[key].label}
+                </Box>
+              ))}
+            </Box>
+          )}
+
           {/* Model diagram visual */}
           {activeSub?.Visual && (
+            <Box sx={{ mb: 1.5 }}>
+              <Box
+                sx={{
+                  bgcolor: "#f8fafb",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(0,0,0,0.06)",
+                  px: 1.5,
+                  py: 1.5,
+                  "& svg": { width: "100%", height: "auto", display: "block" },
+                }}
+              >
+                <activeSub.Visual />
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button
+                  onClick={() => setVisualExpanded(true)}
+                  size="small"
+                  sx={{
+                    mt: 0.75,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "#D97C14",
+                    textTransform: "none",
+                    px: 1,
+                    py: 0.25,
+                    minWidth: 0,
+                    "&:hover": { bgcolor: "rgba(217,124,20,0.08)" },
+                  }}
+                >
+                  Expand Image
+                </Button>
+              </Box>
+            </Box>
+          )}
+
+          {/* Expanded visual lightbox */}
+          {visualExpanded && activeSub?.Visual && (
             <Box
+              onClick={() => setVisualExpanded(false)}
               sx={{
-                bgcolor: "#f8fafb",
-                borderRadius: "8px",
-                border: "1px solid rgba(0,0,0,0.06)",
-                px: 1.5,
-                py: 1.5,
-                mb: 1.5,
-                "& svg": { width: "100%", height: "auto", display: "block" },
+                position: "fixed",
+                inset: 0,
+                zIndex: 9999,
+                bgcolor: "rgba(0,0,0,0.7)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
               }}
             >
-              <activeSub.Visual />
+              <Box
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  bgcolor: "white",
+                  borderRadius: "12px",
+                  p: 4,
+                  maxWidth: "92vw",
+                  maxHeight: "92vh",
+                  width: 1200,
+                  boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
+                  "& svg": { width: "100%", height: "auto", display: "block" },
+                  "& img": { width: "100%", height: "auto", display: "block" },
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                }}
+              >
+                <activeSub.Visual />
+                <Button
+                  onClick={() => setVisualExpanded(false)}
+                  size="small"
+                  sx={{
+                    mt: 1.5,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "#D97C14",
+                    textTransform: "none",
+                    px: 1,
+                    py: 0.25,
+                    minWidth: 0,
+                    "&:hover": { bgcolor: "rgba(217,124,20,0.08)" },
+                  }}
+                >
+                  Close Image
+                </Button>
+              </Box>
             </Box>
           )}
 
           <Box component="ul" sx={{ m: 0, pl: 2.5, listStyle: "none", "& li": { position: "relative", pl: 2, mb: 1.5, "&::before": { content: "'•'", position: "absolute", left: 0, color: step.color, fontWeight: 700, fontSize: 18 } } }}>
-            {activeSub?.caption.split("\n").map((line, i) => {
+            {(activeToggle?.caption ?? activeSub?.caption)?.split("\n").map((line, i) => {
               const parts = line.split(/\*\*(.*?)\*\*/g);
               return (
                 <Typography key={i} component="li" sx={{ fontSize: 16, color: "rgba(0,0,0,0.55)", lineHeight: 1.7 }}>

@@ -273,29 +273,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <ChevronRightIcon sx={{ color: "rgba(0,0,0,0.3)", fontSize: 18 }} />
             </ListItemButton>
 
-            <ListItemButton sx={{ py: 1.5, px: 2.5 }}>
-              <ListItemIcon sx={{ minWidth: 36 }}>
-                <PersonSearchIcon sx={{ color: "#00446a", fontSize: 22 }} />
-              </ListItemIcon>
-              <ListItemText
-                primary="Impersonate User"
-                slotProps={{ primary: { sx: { fontSize: 14, color: "#555" } } }}
-              />
-              <ChevronRightIcon sx={{ color: "rgba(0,0,0,0.3)", fontSize: 18 }} />
-            </ListItemButton>
-
-            <ListItemButton
-              onClick={() => { openTempoTour(); setSidebarOpen(false); }}
-              sx={{ py: 1, px: 2.5, opacity: 0.4, "&:hover": { opacity: 0.7 } }}
-            >
-              <ListItemIcon sx={{ minWidth: 36 }}>
-                <SlideshowIcon sx={{ color: "rgba(0,0,0,0.3)", fontSize: 20 }} />
-              </ListItemIcon>
-              <ListItemText
-                primary="What is Tempo?"
-                slotProps={{ primary: { sx: { fontSize: 12, color: "rgba(0,0,0,0.4)" } } }}
-              />
-            </ListItemButton>
           </List>
 
           {/* User info */}
@@ -309,10 +286,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               borderTop: "1px solid rgba(0,0,0,0.06)",
             }}
           >
-            <Avatar sx={{ width: 36, height: 36, bgcolor: "#e0e0e0", color: "#666", fontSize: 16 }}>C</Avatar>
+            <Avatar sx={{ width: 36, height: 36, bgcolor: "#e0e0e0", color: "#666", fontSize: 16 }}>S</Avatar>
             <Box>
-              <Typography sx={{ fontSize: 14, fontWeight: 500, color: "#333" }}>Cathryn Greene</Typography>
-              <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,0.4)" }}>cgreene@insight2profit.com</Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 500, color: "#333" }}>Sarah Mitchell</Typography>
+              <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,0.4)" }}>smitchell@insight2profit.com</Typography>
             </Box>
           </Box>
 
